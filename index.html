@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.4</title>
+<title>경비초소 기록 v11.6</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -162,7 +162,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.4</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.6</span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -332,10 +332,39 @@ function fixDongNumber(n){
   return n;
 }
 
+// ──────────────────────────────────────────
+// 말로 읽은 번호판 숫자 → 아라비아 숫자 (v11.6)
+// 예) "이구구로 오하나하나하나" → "299로5111"
+//     "공삼다 하나둘셋넷" → "03다1234"
+// 번호판 모양(숫자2~3 + 번호판글자 + 숫자4)일 때만 바꾸므로 일반 대화는 건드리지 않습니다.
+// ──────────────────────────────────────────
+const SPOKEN_DIGIT={"공":0,"영":0,"하나":1,"일":1,"둘":2,"이":2,"삼":3,"셋":3,"넷":4,"사":4,"오":5,"다섯":5,"육":6,"륙":6,"여섯":6,"칠":7,"일곱":7,"팔":8,"여덟":8,"구":9,"아홉":9};
+const DW_SRC="(?:다섯|여섯|일곱|여덟|아홉|하나|[0-9]|공|영|둘|셋|넷|일|이|삼|사|오|육|륙|칠|팔|구)";
+const PLATE_LETTERS="가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호";
+const SPOKEN_PLATE_RE=new RegExp("((?:"+DW_SRC+"[\\s,\\-]*){1,2}"+DW_SRC+")[\\s,]*(["+PLATE_LETTERS+"])[\\s,]*((?:"+DW_SRC+"[\\s,\\-]*){3}"+DW_SRC+")(?![0-9])","g");
+function spokenToDigits(str){
+  return (str.match(new RegExp(DW_SRC,"g"))||[]).map(t=>/[0-9]/.test(t)?t:SPOKEN_DIGIT[t]).join("");
+}
+function normalizeSpokenPlate(text){
+  return String(text||"").replace(SPOKEN_PLATE_RE,function(m,front,letter,back){
+    // 이미 전부 숫자인 경우(299로5111)는 그대로 — 공백만 정리
+    return " "+spokenToDigits(front)+letter+spokenToDigits(back)+" ";
+  });
+}
+
 function splitDongHo(text){
   // 번호판(숫자2~3+글자+숫자4)을 먼저 "|"로 가려서, 번호판 숫자가 동/호 숫자에 붙지 않게 함
   // 단, "105동 302호 8774"처럼 동 바로 뒤에 오는 경우는 호수로 남겨둠
-  let conv = koreanNumToArabic(text||"");
+  let conv = text||"";
+  conv = conv.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2");
+  conv = normalizeSpokenPlate(conv);
+  // ① 받아쓰기가 천 단위 쉼표를 붙이는 경우: "2,305호" → "2305호"
+  conv = conv.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2");
+  // ② 한글 숫자 층: "십삼층" → "13층"
+  conv = conv.replace(/([일이삼사오육칠팔구십]+)\s*층/g, function(m,k){ const n=parseKorNum(k); return n>0? n+"층" : m; });
+  conv = koreanNumToArabic(conv);
+  // ③ 층+호로 말한 경우: "13층 3호" → "1303호", "23층 5호" → "2305호"
+  conv = conv.replace(/([0-9]{1,2})\s*층\s*([0-9]{1,2})\s*호/g, function(m,f,u){ return (+f*100 + +u)+"호"; });
   // "백 8동" / "백8동"처럼 '백'만 따로 적힌 경우 → 108동
   conv = conv.replace(/백\s*([0-9]{1,2})\s*동/g, function(m,d){ return (100+(+d))+"동"; });
   const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])","g");
@@ -357,6 +386,7 @@ function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"
 
 function parseVehicleText(text){
   const R = {};
+  text = normalizeSpokenPlate(String(text||"").replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2"));
   // 한글 숫자를 아라비아 숫자로 먼저 변환
   let converted = koreanNumToArabic(text);
   let clean = converted.replace(/\s/g,"");
@@ -375,7 +405,7 @@ function parseVehicleText(text){
   const purposeKeywords = [
     // 복합 표현 (긴 것 먼저)
     "이유식배달","반찬배달","새벽배달","택배배달","꽃배달","약배달","김치배달","도시락배달","해산물배달","음식배달","가구배송",
-    "부모님집방문","부모님방문","친구집방문","친구방문","지인집방문","지인방문","친척방문","가족방문","세대방문",
+    "부모님집방문","부모님방문","친구집방문","친구방문","지인집방문","지인방문","친척집방문","친척방문","가족방문","세대방문",
     "인터넷설치","가스점검","보일러점검","정수기점검","가구설치",
     "어린이집방문","유치원방문","방문수업","가정교사","학습지",
     "관리실방문","상가방문","노인정방문",
@@ -387,7 +417,7 @@ function parseVehicleText(text){
     // 짧은 단어
     "택배","배송","배달","수리","공사","설치","점검","청소","방역","소독",
     "학원","어린이집","유치원","택시","과외","기사","상가","관리실","노인정","경로당",
-    "이마트","해산물","세탁물","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","오아시스","당근","픽업","지인","친구","정수기",
+    "이마트","해산물","세탁물","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","오아시스","당근","픽업","지인","친구","친척","정수기",
     "경비","기타"
   ];
   for(let i=0; i<purposeKeywords.length; i++){
@@ -598,7 +628,7 @@ function parseVehicleText(text){
   // 전체 판별: "마지막에 말한 것"이 이긴다
   function classify(){
     autoFillHo();detectSrc();detectPurpose();
-    const raw=(typeof koreanNumToArabic==="function"?koreanNumToArabic(contentArea.value):contentArea.value);
+    const raw=koreanNumToArabic(normalizeSpokenPlate(contentArea.value.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g,"$1$2")));
     const t=removeHoNotPlate(raw.replace(/[0-9]{1,4}\s*동/g," ")).replace(/\s+/g,"");
     if(!typeManual){
       const pp=lastPlatePos(t), sp=lastSrcPos(t);
