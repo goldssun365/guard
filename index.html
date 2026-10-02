@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a3a6b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>경비초소 기록 v11</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+:root {
+  --primary: #1a3a6b;
+  --accent: #e8960a;
+  --green: #1b7a3e;
+  --red: #c0392b;
+  --bg: #eef1f7;
+  --white: #ffffff;
+  --border: #c5cde0;
+  --text: #1a2540;
+  --muted: #7a86a0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans KR', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.ic-header{background:var(--primary);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.ic-header h1{font-size:20px;font-weight:900;}
+.ic-clock{font-size:20px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+.ic-wrap{max-width:1000px;margin:0 auto;padding:18px 16px 60px;}
+.ic-card{background:var(--white);border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1px solid var(--border);margin-bottom:18px;}
+.ic-card-title{font-size:16px;font-weight:900;color:var(--primary);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--primary);}
+.ic-label{font-size:14px;font-weight:700;color:var(--muted);margin:14px 0 8px;display:block;}
+.ic-src-group{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.ic-src-btn{padding:12px 18px;font-size:16px;font-weight:700;border:2px solid var(--border);border-radius:8px;background:#fafbff;color:var(--text);cursor:pointer;font-family:inherit;}
+.ic-src-btn:hover{border-color:var(--primary);}
+.ic-src-btn.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+.ic-ho-row{display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap;}
+.ic-ho-input{width:180px;padding:12px;font-size:18px;border:2px solid var(--border);border-radius:8px;font-family:inherit;transition:border-color .2s,background .2s;}
+.ic-ho-input.autofill{border-color:var(--green);background:#eefaf0;}
+.ic-hint{font-size:13px;color:var(--muted);}
+.ic-status-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#f0f4ff;border:1px solid var(--border);margin:12px 0;}
+.ic-dot{width:14px;height:14px;border-radius:50%;background:#aaa;flex-shrink:0;}
+.ic-dot.active{background:#e53935;animation:icpulse 1s infinite;}
+.ic-dot.done{background:var(--green);}
+@keyframes icpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+.ic-status-text{font-size:16px;font-weight:700;color:var(--primary);}
+.ic-content-area{width:100%;padding:14px;font-size:20px;border:2px solid var(--primary);border-radius:8px;resize:vertical;min-height:130px;font-family:inherit;color:var(--text);background:#fafbff;line-height:1.5;}
+.ic-btn-group{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.ic-btn{padding:12px 18px;font-size:16px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:inherit;}
+.ic-btn:active{transform:scale(.97);}
+.ic-btn-primary{background:var(--primary);color:#fff;font-size:18px;padding:15px 26px;}
+.ic-btn-stop{background:var(--red);color:#fff;font-size:18px;padding:15px 26px;}
+.ic-btn-clear{background:#e8eaf0;color:var(--text);}
+.ic-btn-save-row{background:var(--green);color:#fff;font-size:18px;padding:14px 30px;margin-left:auto;}
+@media(max-width:640px){.ic-btn-save-row{margin-left:0;width:100%;}}
+.ic-btn-excel{background:var(--accent);color:#fff;}
+.ic-btn-danger{background:#fff;color:var(--red);border:2px solid var(--red);}
+#icTableBox{overflow-x:auto;}
+.ic-table{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;min-width:720px;}
+.ic-table td{word-break:break-word;}
+.ic-table th,.ic-table td{border:1px solid var(--border);padding:9px 8px;text-align:left;vertical-align:top;}
+.ic-table th{background:#f0f4ff;color:var(--primary);font-weight:700;white-space:nowrap;}
+.ic-table td.c{text-align:center;white-space:nowrap;}
+.ic-del{background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ic-empty{color:var(--muted);text-align:center;padding:24px;font-size:15px;}
+.ic-count{font-size:14px;color:var(--muted);font-weight:700;}
+.ic-foot{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.ic-notice{background:#fff3cd;border-left:5px solid var(--accent);padding:10px 16px;font-size:13px;color:#7a5500;border-radius:6px;margin-bottom:16px;line-height:1.6;}
+
+.ic-type-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px;padding:12px;border-radius:10px;background:#f6f7fb;border:2px dashed var(--border);}
+.ic-type-label{font-size:14px;font-weight:900;color:var(--muted);}
+.ic-type-btn{padding:10px 16px;font-size:17px;font-weight:900;border:2px solid var(--border);border-radius:8px;background:#fff;color:var(--text);cursor:pointer;font-family:inherit;}
+.ic-type-btn.on[data-type="vehicle"]{background:#1565c0;border-color:#1565c0;color:#fff;}
+.ic-type-btn.on[data-type="intercom"]{background:var(--green);border-color:var(--green);color:#fff;}
+.ic-type-reason{font-size:14px;font-weight:700;color:var(--primary);}
+.ic-type-reason.manual{color:var(--red);}
+.ic-car-row{display:none;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;}
+body.ic-vehicle .ic-car-row{display:flex;}
+body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{opacity:.35;}
+.ic-car-input{width:200px;font-weight:900;letter-spacing:1px;}
+.ic-car-input.warn{border-color:var(--red);background:#fff1f0;}
+.ic-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:900;color:#fff;}
+.ic-tag.v{background:#1565c0;}.ic-tag.i{background:var(--green);}
+.ic-filter{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.ic-filter button{padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:#fff;font-weight:700;cursor:pointer;font-family:inherit;}
+.ic-filter button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+
+/* ===== v11 휴대폰 최적화 ===== */
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}
+button,input,textarea{touch-action:manipulation;}
+.ic-header{position:sticky;top:0;z-index:40;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;}
+.ic-ver{font-size:12px;opacity:.75;font-weight:700;}
+.ic-sub{font-size:12px;color:var(--muted);font-weight:700;margin-left:6px;}
+.ic-wrap{padding:12px 12px 24px;}
+.ic-card{padding:16px;}
+.ic-btn-group{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;}
+.ic-btn-group .ic-btn{padding:16px 6px;font-size:17px;}
+body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
+@keyframes icblink{0%,100%{opacity:1;}50%{opacity:.6;}}
+.ic-interim{min-height:22px;font-size:15px;color:var(--muted);padding:0 4px 6px;}
+.ic-content-area{font-size:18px;min-height:120px;}
+.ic-type-btn{flex:1 1 0;min-width:0;white-space:nowrap;}
+.ic-ho-input{max-width:100%;font-size:18px;}
+.ic-rec-card{border:1px solid var(--border);border-left:6px solid var(--green);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fff;}
+.ic-rec-card.v{border-left-color:#1565c0;}
+.ic-rc-top{display:flex;align-items:center;gap:8px;}
+.ic-rc-time{font-size:13px;color:var(--muted);font-weight:700;margin-left:auto;}
+.ic-rc-main{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;margin:8px 0 4px;}
+.ic-rc-car{font-size:19px;letter-spacing:.5px;}
+.ic-rc-ho{font-size:16px;font-weight:700;}
+.ic-rc-pur{font-size:14px;background:#f0f4ff;border-radius:10px;padding:1px 8px;}
+.ic-rc-txt{font-size:13px;color:var(--muted);line-height:1.5;word-break:break-all;}
+.ic-del{padding:6px 10px;}
+.ic-foot .ic-btn{flex:1 1 auto;padding:14px;}
+@media(max-width:700px){
+  .ic-header h1{font-size:18px;}
+  .ic-clock{font-size:17px;}
+  .ic-ho-row,.ic-car-row{gap:8px;}
+  .ic-ho-row .ic-label,.ic-car-row .ic-label{width:100%;}
+  .ic-ho-input,.ic-car-input,#icPurposeInput{width:100%!important;}
+  .ic-hint{width:100%;}
+  .ic-type-label,.ic-type-reason{width:100%;}
+  .ic-type-btn{padding:12px 6px;font-size:16px;}
+  body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{display:none;}
+  .ic-src-btn{padding:10px 12px;font-size:15px;flex:1 1 30%;}
+  /* 저장 버튼은 화면 아래 고정 — 한 손으로 바로 누르기 */
+  .ic-btn-save-row{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto!important;margin:0!important;z-index:60;padding:18px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+}
+
+</style>
+</head>
+<body>
+<div id="panelIntercom">
+  <div class="ic-header">
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11</span></h1>
+    <div class="ic-clock" id="icClock">--:--:--</div>
+  </div>
+  <div class="ic-wrap">
+    <div class="ic-card">
+      <div class="ic-card-title">받아쓰기 <span class="ic-sub">마지막에 말한 단어로 자동 구분</span></div>
+      <div class="ic-btn-group">
+        <button class="ic-btn ic-btn-primary" id="icStartBtn">🎙️ 녹음 시작</button>
+        <button class="ic-btn ic-btn-stop" id="icStopBtn">■ 중지</button>
+        <button class="ic-btn ic-btn-clear" id="icClearBtn">지우기</button>
+      </div>
+      <div class="ic-status-bar">
+        <span class="ic-dot" id="icDot"></span>
+        <span class="ic-status-text" id="icStatusText">대기 중 — [음성 시작]을 누르고 질문부터 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다</span>
+      </div>
+      <div class="ic-interim" id="icInterim"></div>
+      <textarea class="ic-content-area" id="icContentArea" placeholder="여기에 통화 내용이 글자로 채워집니다...&#10;[방문차량] 몇 동 몇 호에 무슨 일로 가세요?  113동 703호 지인방문이요  경기20바4567&#10;[인터폰민원] 몇 호 가세요?  아 네 305호  102동  공동현관문"></textarea>
+      <div class="ic-type-box" id="icTypeBox">
+        <span class="ic-type-label">저장 구분</span>
+        <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
+        <button class="ic-type-btn" data-type="intercom">📞 인터폰민원</button>
+        <span class="ic-type-reason" id="icTypeReason">아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)</span>
+      </div>
+      <div class="ic-car-row" id="icCarRow">
+        <span class="ic-label" style="margin:0;">🚗 차량번호</span>
+        <input class="ic-ho-input ic-car-input" id="icCarInput" type="text" placeholder="예: 경기20바4567" autocomplete="off">
+        <span class="ic-label" style="margin:0;">방문목적</span>
+        <input class="ic-ho-input" id="icPurposeInput" type="text" placeholder="예: 지인방문" autocomplete="off" style="width:150px;">
+        <span class="ic-hint">※ "?"가 있으면 한 글자 확인</span>
+      </div>
+      <span class="ic-label" id="icSrcLabel">발신처 (인터폰민원일 때 · 말하거나 눌러서 선택)</span>
+      <div class="ic-src-group" id="icSrcGroup">
+        <button class="ic-src-btn" data-src="입주세대">입주세대</button>
+        <button class="ic-src-btn" data-src="공동현관문">공동현관문</button>
+        <button class="ic-src-btn" data-src="방재실">방재실</button>
+        <button class="ic-src-btn" data-src="후문경비실">후문경비실</button>
+        <button class="ic-src-btn" data-src="관리사무소">관리사무소</button>
+        <button class="ic-src-btn" data-src="기타">기타</button>
+      </div>
+      <div class="ic-ho-row">
+        <span class="ic-label" style="margin:0;">동/호수</span>
+        <input class="ic-ho-input" id="icHoInput" type="text" placeholder="예: 113동 703호" autocomplete="off">
+        <span class="ic-hint">※ 자동 입력(초록) · 틀리면 직접 수정</span>
+        <button class="ic-btn ic-btn-save-row" id="icSaveBtn">💾 저장</button>
+      </div>
+    </div>
+    <div class="ic-card">
+      <div class="ic-card-title">저장된 기록 <span class="ic-count" id="icCount"></span></div>
+      <div class="ic-filter" id="icFilter"><button data-f="all" class="on">전체</button><button data-f="vehicle">🚗 방문차량</button><button data-f="intercom">📞 인터폰민원</button></div>
+      <div id="icTableBox"></div>
+      <div class="ic-foot">
+        <button class="ic-btn ic-btn-excel" id="icExcelBtn">📊 엑셀 저장 (방문차량/인터폰 시트 분리)</button>
+        <button class="ic-btn ic-btn-danger" id="icWipeBtn">🗑 전체 삭제</button>
+      </div>
+    </div>
+    <div class="ic-notice">
+      📱 <b>휴대폰 사용법</b> : 크롬(안드로이드) 또는 사파리(아이폰)로 열고, 처음 한 번 <b>마이크 허용</b>을 눌러주세요. 받아쓰기는 <b>인터넷(데이터/와이파이)</b>이 필요하고, 녹음 중에는 화면이 꺼지지 않게 유지됩니다.<br>
+      🔀 <b>자동 구분 = "마지막에 말한 것"</b> : 끝에 <b>차량번호(경기20바 4567)</b> → 🚗방문차량 / 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b> → 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
+      🏠 동/호수는 "113동 703호"처럼 말하면 자동 입력됩니다. 기록은 <b>이 휴대폰 브라우저 안에만</b> 저장되니, 근무 끝나면 <b>[엑셀 저장]</b>으로 꼭 내보내세요.
+    </div>
+  </div>
+</div>
+<script>
+// 번호판·동호수·전화번호 해석 엔진 (v10 방문차량 엔진에서 그대로 가져옴)
+function nowText(){
+  const now = new Date();
+  return now.getFullYear()+"-"+
+    String(now.getMonth()+1).padStart(2,"0")+"-"+
+    String(now.getDate()).padStart(2,"0")+" "+
+    String(now.getHours()).padStart(2,"0")+":"+
+    String(now.getMinutes()).padStart(2,"0")+":"+
+    String(now.getSeconds()).padStart(2,"0");
+}
+
+function koreanNumToArabic(str) {
+  // 1단계: 한글 숫자가 포함된 "XXX동" "XXX호" 패턴을 찾아서 변환
+  // 동/호 앞의 한글 숫자 덩어리를 숫자로 바꿔줌
+  str = str.replace(
+    /((?:[일이삼사오육칠팔구십백천만]+))([동호])/g,
+    function(match, numPart, suffix){
+      const converted = parseKorNum(numPart);
+      if(converted > 0) return converted + suffix;
+      return match;
+    }
+  );
+  return str;
+}
+
+function parseKorNum(s) {
+  // "칠백오" → 705, "삼백십" → 310, "천이백사" → 1204
+  if(!s) return 0;
+
+  const digitMap = {
+    '일':1,'이':2,'삼':3,'사':4,'오':5,
+    '육':6,'칠':7,'팔':8,'구':9
+  };
+
+  let result = 0;
+  let current = 0; // 현재 쌓이는 값
+  let total = 0;
+
+  for(let i=0; i<s.length; i++){
+    const c = s[i];
+    if(digitMap[c] !== undefined){
+      current = digitMap[c];
+    } else if(c === '십'){
+      if(current === 0) current = 1;
+      total += current * 10;
+      current = 0;
+    } else if(c === '백'){
+      if(current === 0) current = 1;
+      total += current * 100;
+      current = 0;
+    } else if(c === '천'){
+      if(current === 0) current = 1;
+      total += current * 1000;
+      current = 0;
+    }
+  }
+  total += current;
+  return total;
+}
+
+function parseVehicleText(text){
+  const R = {};
+  // 한글 숫자를 아라비아 숫자로 먼저 변환
+  let converted = koreanNumToArabic(text);
+  let clean = converted.replace(/\s/g,"");
+
+  // 동 추출
+  let dong = clean.match(/[0-9]{1,4}동/);
+  if(dong) R.dong = dong[0];
+
+  // 호수 추출 (강화버전)
+  let ho = null;
+  // 방법1: "703동1204호" → 동 뒤 숫자 우선
+  let hoMatch = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)?/);
+  if(hoMatch){
+    ho = hoMatch[1] + "호";
+  }
+  // 방법2: 동번호 제거 후 나머지에서 호수 추출
+  if(!ho){
+    let cleanForHo = clean.replace(/[0-9]{1,4}동/g,"");
+    let hoMatch2 = cleanForHo.match(/([0-9]{2,4})(호수?|호실?|호)/);
+    if(hoMatch2) ho = hoMatch2[1] + "호";
+  }
+  // 방법3: "호수" "호실" 표현 대응
+  if(!ho){
+    let hoMatch3 = clean.match(/([0-9]{2,4})(?:호수|호실)/);
+    if(hoMatch3) ho = hoMatch3[1] + "호";
+  }
+  if(ho) R.ho = ho;
+
+  // 방문목적 추출
+  // ★ 정해진 단어 목록에서만 찾아서 넣습니다. 목록에 없는 말(질문 문장 등)은 절대 넣지 않고 빈칸으로 둡니다.
+  let purpose = "";
+  let rawClean = text.replace(/\s/g,"");
+
+  // 복합/긴 표현부터 먼저 검사 (짧은 단어에 묻히지 않도록), 그 다음 짧은 단어 순서
+  const purposeKeywords = [
+    // 복합 표현 (긴 것 먼저)
+    "이유식배달","반찬배달","새벽배달","택배배달","꽃배달","약배달","김치배달","도시락배달","해산물배달","음식배달","가구배송",
+    "부모님집방문","부모님방문","친구집방문","친구방문","지인집방문","지인방문","친척방문","가족방문","세대방문",
+    "인터넷설치","가스점검","보일러점검","정수기점검","가구설치",
+    "어린이집방문","유치원방문","방문수업","가정교사","학습지",
+    "관리실방문","상가방문","노인정방문",
+    "삼성에이에스","이사견적","이사청소",
+    "학원차량","학원버스","퀵서비스","운전기사","대리기사",
+    // 사용자 지정 단어
+    "인테리어","가전","조경","세탁소","세탁배송","이유식","정수기점검",
+    "에이에스",
+    // 짧은 단어
+    "택배","배송","배달","수리","공사","설치","점검","청소","방역","소독",
+    "학원","어린이집","유치원","택시","과외","기사","상가","관리실","노인정","경로당",
+    "이마트","해산물","세탁물","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","오아시스","당근","픽업","지인","친구","정수기",
+    "경비","기타"
+  ];
+  for(let i=0; i<purposeKeywords.length; i++){
+    if(rawClean.includes(purposeKeywords[i])){
+      purpose = purposeKeywords[i]; break;
+    }
+  }
+
+  // 목록에 없는 말은 문장을 그대로 넣지 않고 "기타"로 처리
+  // (단, 아무 말도 못 알아들은 경우엔 빈칸으로 둠 — 완전히 빈 음성 결과까지 "기타"로 채우면 오히려 혼란)
+  if(!purpose && rawClean.length >= 2) purpose = "기타";
+
+  // 에이에스 → AS 변환
+  if(purpose === "에이에스") purpose = "AS";
+
+  if(purpose) R.purpose = purpose;
+
+  // ──────────────────────────────────────────
+  // 차량번호 추출 (강화버전)
+  // 음성인식이 "31바9388" → "30일 바 9388" 처럼 쪼갤 수 있음
+  // 지역명 뒤 공백/한글숫자 포함 패턴까지 대응
+  // ──────────────────────────────────────────
+
+  // 원문 기준으로 처리 (공백 있는 상태에서 처리 후 공백 제거)
+  let carRaw = text;
+
+  // 불필요 단어 제거
+  ["차량번호","차번호","번호","넘버","차량넘버","자동차번호"].forEach(w=>{ carRaw=carRaw.replace(new RegExp(w,"g"),""); });
+
+  // 동/호 제거
+  carRaw = carRaw.replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,4}호/g,"");
+
+  // 음성인식 한글 오류 보정 (글자→글자)
+  carRaw = carRaw
+    .replace(/회/g,"허")
+    .replace(/하(?=\s*[0-9])/g,"허")
+    .replace(/배(?=\s*[0-9])/g,"버")
+    .replace(/베/g,"버")
+    .replace(/나(?=\s*[0-9])/g,"나");
+
+  // 숫자 사이에 낀 한글 "일" 제거
+  // 예) "30일 바" → "30바", "31일바" → "31바"
+  carRaw = carRaw.replace(/([0-9]+)\s*일\s*(?=[바-힣])/g,"$1");
+
+  // 공백 제거 후 패턴 검색
+  let carText = carRaw.replace(/\s/g,"");
+
+  // 지역명 포함 패턴 (서울31바9388 등)
+  const regionPattern = /(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)[0-9]{2,3}[가-힣][0-9]{3,4}/;
+  let carWithRegion = carText.match(regionPattern);
+
+  if(carWithRegion){
+    R.carNumber = carWithRegion[0];
+  } else {
+    // 지역명 없는 패턴 (145가6078 등)
+    let car = carText.match(/[0-9]{2,3}[가-힣][0-9]{3,4}/);
+    if(car){
+      R.carNumber = car[0];
+    } else {
+      // ★ 한글 글자(가/나/다/바 등)가 인식되지 않아 숫자만 남은 경우
+      // 예) "경기 84 9426" (한글 누락) → 숫자만으로라도 패턴을 찾아 표시
+      // 차량번호판은 항상 "숫자2~3자리 + 한글1자 + 숫자3~4자리" 구조이므로,
+      // 한글이 빠졌다면 그 자리에 ?를 넣어 사용자가 바로 알아채고 고칠 수 있게 함
+      const regionNumOnly = /(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\s*([0-9]{2,3})\s+([0-9]{3,4})(?![0-9])/;
+      let m1 = carRaw.match(regionNumOnly);
+      if(m1){
+        R.carNumber = m1[1] + m1[2] + "?" + m1[3];
+      } else {
+        // 지역명 없이 "숫자2~3자리 + 숫자3~4자리"만 있는 경우 (예: "84 9426")
+        const numOnly = /(?:^|[^0-9])([0-9]{2,3})\s+([0-9]{3,4})(?![0-9])/;
+        let m2 = carRaw.match(numOnly);
+        if(m2){
+          R.carNumber = m2[1] + "?" + m2[2];
+        }
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────
+  // 전화번호 추출
+  // 예) "010-1234-5678" / "010 1234 5678" / "공일공 일이삼사 오육칠팔"
+  //     "전화번호 1234 5678" (010 생략) / "연락처 1234의5678"
+  // ──────────────────────────────────────────
+  let phoneWork = converted; // 한글숫자→아라비아 변환된 텍스트 사용
+
+  // 동/호 제거 (전화번호 추출 시 혼동 방지용 — 별도 작업본)
+  phoneWork = phoneWork.replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,4}호/g,"");
+
+  // 차량번호 패턴 제거 (한국 번호판 전용 한글만 인정 → "전화" 등 일반 단어와 혼동 방지)
+  const PLATE_CHARS = "가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호";
+  const plateClass = "[" + PLATE_CHARS + "]";
+  phoneWork = phoneWork.replace(new RegExp("(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\\s*[0-9]{2,3}\\s*"+plateClass+"\\s*[0-9]{3,4}","g"),"");
+  phoneWork = phoneWork.replace(new RegExp("[0-9]{2,3}\\s*"+plateClass+"\\s*[0-9]{3,4}","g"),"");
+
+  // 한글 자릿수(공~구) → 숫자로 변환
+  const koreanDigit = {'공':'0','일':'1','이':'2','삼':'3','사':'4','오':'5','육':'6','칠':'7','팔':'8','구':'9'};
+  let phoneConverted = phoneWork.replace(/[공일이삼사오육칠팔구]/g, function(ch){
+    return koreanDigit[ch] !== undefined ? koreanDigit[ch] : ch;
+  });
+
+  let phoneFound = "";
+
+  // 방법1: 010/011/016~019로 시작하는 10~11자리 번호 그대로 말한 경우
+  let phoneClean = phoneConverted.replace(/[^0-9]/g," ").replace(/\s+/g,"");
+  let phoneMatch = phoneClean.match(/01[0-9][0-9]{7,8}/);
+  if(phoneMatch){
+    phoneFound = phoneMatch[0];
+  }
+
+  // 방법2: 010을 생략하고 말한 경우 → "전화/전화번호/연락처/핸드폰/휴대폰" 키워드 뒤
+  // 7~8자리 숫자만 있으면 010을 자동으로 붙임 ('번호'는 차량번호와 혼동되어 제외)
+  if(!phoneFound){
+    const m = phoneConverted.match(/(전화번호|전화|연락처|핸드폰|휴대폰)([^0-9]{0,6})([0-9][0-9가-힣\s\-]{5,12}[0-9])/);
+    if(m){
+      let digits = m[3].replace(/[^0-9]/g,"");
+      if(digits.length === 7 || digits.length === 8){
+        phoneFound = "010" + digits;
+      } else if(digits.length === 10 || digits.length === 11){
+        phoneFound = digits;
+      }
+    }
+  }
+
+  if(phoneFound){
+    let p = phoneFound;
+    let formatted;
+    if(p.length === 11){
+      formatted = p.slice(0,3)+"-"+p.slice(3,7)+"-"+p.slice(7);
+    } else if(p.length === 10){
+      formatted = p.slice(0,3)+"-"+p.slice(3,6)+"-"+p.slice(6);
+    } else {
+      formatted = p; // 예외적인 길이는 그대로 표시
+    }
+    R.phone = formatted;
+  }
+
+  return R;
+}
+</script>
+<script>
+(function(){
+  const KEY="intercomComplaints_v1";
+  const VKEY="visitRecords";               // [방문차량 등록] 탭과 같은 저장소 → 양쪽 목록에 함께 보임
+  let selectedSrc="";
+  let autoPurpose="";
+  let recType="";                          // "vehicle" | "intercom" | ""
+  let typeManual=false, carManual=false, purposeManual=false;
+  let viewFilter="all";
+  const $=id=>document.getElementById(id);
+  const hoInput=$("icHoInput"),dot=$("icDot"),statusText=$("icStatusText"),contentArea=$("icContentArea");
+  const carInput=$("icCarInput"),purposeInput=$("icPurposeInput"),typeReason=$("icTypeReason");
+  const p2=x=>String(x).padStart(2,'0');
+
+  function tick(){const n=new Date();const el=$("icClock");if(el)el.textContent=p2(n.getHours())+":"+p2(n.getMinutes())+":"+p2(n.getSeconds());}
+  setInterval(tick,1000);tick();
+
+  // ── 발신처 ──
+  function selectSrc(label){selectedSrc=label;document.querySelectorAll('#icSrcGroup .ic-src-btn').forEach(x=>x.classList.toggle('on',x.dataset.src===label));}
+  $("icSrcGroup").addEventListener('click',e=>{const b=e.target.closest('.ic-src-btn');if(!b)return;selectSrc(b.dataset.src);if(!typeManual){setType("intercom","발신처 버튼 선택",false);}});
+  const SRCLIST=[["공동현관문","공동현관"],["공동현관문","현관"],["후문경비실","후문"],["방재실","방재"],["관리사무소","관리사무소"],["관리사무소","관리소"],["입주세대","입주"],["입주세대","세대"],["관리사무소","관리"]];
+  // 인터폰 판별용 '발신처 확정 단어'(문장 끝 판단에 사용) — 너무 흔한 '세대','관리'는 판별에서 제외
+  const SRC_STRONG=["공동현관문","공동현관","현관문","후문경비실","후문","방재실","방재","관리사무소","관리소","입주세대","인터폰민원","인터폰"];
+  function detectSrc(){if(selectedSrc)return;const t=contentArea.value.replace(/\s+/g,"");for(const [label,kw] of SRCLIST){if(t.indexOf(kw.replace(/\s+/g,""))>=0){selectSrc(label);break;}}}
+
+  // ── 동/호 ──
+  function extractDongHo(text){if(!text)return "";const t=(typeof koreanNumToArabic==="function"?koreanNumToArabic(text):text).replace(/\s+/g,' ');let dong="",ho="";const md=t.match(/(\d{1,4})\s*동/);const mh=t.match(/(\d{1,5})\s*호/);if(md)dong=md[1]+"동";if(mh)ho=mh[1]+"호";if(dong&&ho)return dong+" "+ho;return dong||ho||"";}
+  let hoManual=false;
+  hoInput.addEventListener('input',()=>{hoManual=true;hoInput.classList.remove('autofill');});
+  function flash(el){el.classList.add('autofill');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('autofill'),2500);}
+  function autoFillHo(){if(hoManual&&hoInput.value.trim())return;const f=extractDongHo(contentArea.value);if(f&&f!==hoInput.value){hoInput.value=f;flash(hoInput);}}
+
+  // ── 방문목적(인터폰용) ──
+  const PLIST=[["어린이집","어린이집"],["인테리어","인테리어"],["이유식배달","이유식"],["카드배송","카드"],["세탁배송","세탁"],["우유배달","우유"],["가구배송","가구"],["침대배송","침대"],["꽃배달","꽃"],["음식배달","음식"],["우편물","우편"],["학원","학원"],["당근","당근"],["가전","가전"],["택배","택배"],["친구집","친구집"],["지인방문","지인"],["친구방문","친구방문"],["지하로 내려감","지하"],["1층으로 올라감","1층"]];
+  function detectPurpose(){if(autoPurpose)return;const t=contentArea.value.replace(/\s+/g,"");for(const [label,kw] of PLIST){if(t.indexOf(kw.replace(/\s+/g,""))>=0){autoPurpose=label;break;}}}
+
+  // ── 차량번호 위치 찾기 (구분 판별용, 엄격 기준) ──
+  const PLATE_CHARS="가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호";
+  const REGION="서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주";
+  function lastPlatePos(t){
+    // t: 공백 제거 + 동/호 제거된 문장. 번호판(숫자2~3+전용한글+숫자4) 또는 지역명+숫자만 남은 경우
+    let pos=-1,m;
+    const re1=new RegExp("("+REGION+")?[0-9]{2,3}["+PLATE_CHARS+"][0-9]{4}","g");
+    while((m=re1.exec(t))) pos=Math.max(pos,m.index+m[0].length);
+    const re2=new RegExp("("+REGION+")[0-9]{2,3}[0-9]{4}","g"); // 한글 글자가 빠진 경우(지역명이 있을 때만 인정)
+    while((m=re2.exec(t))) pos=Math.max(pos,m.index+m[0].length);
+    ["방문차량","차량번호","차번호"].forEach(w=>{const i=t.lastIndexOf(w);if(i>=0)pos=Math.max(pos,i+w.length);});
+    return pos;
+  }
+  function lastSrcPos(t){let pos=-1;SRC_STRONG.forEach(w=>{const i=t.lastIndexOf(w);if(i>=0)pos=Math.max(pos,i+w.length);});return pos;}
+
+  function setType(t,reason,manual){
+    recType=t;
+    document.querySelectorAll('#icTypeBox .ic-type-btn').forEach(b=>b.classList.toggle('on',b.dataset.type===t));
+    document.body.classList.toggle('ic-vehicle',t==="vehicle");
+    typeReason.textContent=t?((manual?"✋ 직접 선택: ":"🤖 자동 판별: ")+reason):"아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)";
+    typeReason.classList.toggle('manual',!!manual);
+  }
+  $("icTypeBox").addEventListener('click',e=>{const b=e.target.closest('.ic-type-btn');if(!b)return;typeManual=true;setType(b.dataset.type,b.dataset.type==="vehicle"?"방문차량으로 저장":"인터폰민원으로 저장",true);if(b.dataset.type==="vehicle")fillVehicleFields(true);});
+
+  function fillVehicleFields(force){
+    if(typeof parseVehicleText!=="function")return;
+    const R=parseVehicleText(contentArea.value||"");
+    if(!carManual&&(R.carNumber||force)){if(R.carNumber&&R.carNumber!==carInput.value){carInput.value=R.carNumber;flash(carInput);}}
+    if(!purposeManual&&R.purpose&&R.purpose!==purposeInput.value){purposeInput.value=R.purpose;}
+    carInput.classList.toggle('warn',carInput.value.indexOf("?")>=0);
+  }
+
+  // 전체 판별: "마지막에 말한 것"이 이긴다
+  function classify(){
+    autoFillHo();detectSrc();detectPurpose();
+    const raw=(typeof koreanNumToArabic==="function"?koreanNumToArabic(contentArea.value):contentArea.value);
+    const t=raw.replace(/\s+/g,"").replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,5}호/g,"");
+    if(!typeManual){
+      const pp=lastPlatePos(t), sp=lastSrcPos(t);
+      if(pp<0&&sp<0) setType("","",false);
+      else if(pp>sp) setType("vehicle","마지막에 차량번호를 말함",false);
+      else setType("intercom","마지막에 발신처("+(selectedSrc||"인터폰")+")를 말함",false);
+    }
+    if(recType==="vehicle") fillVehicleFields(false);
+  }
+  carInput.addEventListener('input',()=>{carManual=true;carInput.classList.toggle('warn',carInput.value.indexOf("?")>=0);});
+  purposeInput.addEventListener('input',()=>{purposeManual=true;});
+  contentArea.addEventListener('input',classify);
+
+  // ── 음성인식 (휴대폰 내장 마이크 1개) ──
+  // 안드로이드 크롬은 같은 문장을 누적해서 여러 번 돌려주는 버그가 있어,
+  // 매번 '이번 세션 전체 결과'를 다시 계산하고 겹치는 문장은 합쳐서 중복 입력을 막습니다.
+  let recognition=null, baseText="", wakeLock=null, lastFin="", sessionSkip="";
+  const interimEl=$("icInterim");
+  function setStatus(txt,mode){statusText.textContent=txt;dot.className='ic-dot'+(mode==='active'?' active':mode==='done'?' done':'');}
+  async function keepAwake(on){
+    try{
+      if(on&&'wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});}
+      if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}
+    }catch(e){}
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&recognition&&!recognition._stopped)keepAwake(true);});
+  function sessionFinals(results){
+    const out=[];
+    for(let i=0;i<results.length;i++){
+      if(!results[i].isFinal)continue;
+      const tr=results[i][0].transcript.trim(); if(!tr)continue;
+      const last=out.length?out[out.length-1]:"";
+      if(last&&tr.replace(/\s/g,"").startsWith(last.replace(/\s/g,""))) out[out.length-1]=tr;      // 누적 반복 → 교체
+      else if(last&&last.replace(/\s/g,"").startsWith(tr.replace(/\s/g,""))) continue;           // 이미 포함
+      else out.push(tr);
+    }
+    return out.join(" ");
+  }
+  function startRec(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){alert("이 브라우저는 음성인식을 지원하지 않습니다.\n안드로이드는 크롬, 아이폰은 사파리로 열어주세요.");return;}
+    if(recognition){try{recognition._stopped=true;recognition.abort();}catch(e){}}
+    const rec=new SR();recognition=rec;
+    rec.lang="ko-KR";rec.continuous=true;rec.interimResults=true;rec._stopped=false;
+    baseText=contentArea.value.trim(); lastFin=""; sessionSkip="";
+    rec.onstart=()=>{setStatus("듣는 중... 마지막에 차량번호 또는 발신처를 말하세요","active");document.body.classList.add('ic-rec');};
+    rec.onresult=(event)=>{
+      if(rec!==recognition)return;
+      lastFin=sessionFinals(event.results);
+      let fin=lastFin;
+      if(sessionSkip){ fin = fin.startsWith(sessionSkip) ? fin.slice(sessionSkip.length).trim() : fin; }
+      let interim="";for(let i=event.resultIndex;i<event.results.length;i++){if(!event.results[i].isFinal)interim+=event.results[i][0].transcript;}
+      interimEl.textContent=interim?("🗣 "+interim):"";
+      const next=(baseText+" "+fin).trim();
+      if(next!==contentArea.value){contentArea.value=next;contentArea.scrollTop=contentArea.scrollHeight;classify();}
+    };
+    rec.onerror=(e)=>{
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){rec._stopped=true;setStatus("마이크 권한이 꺼져 있습니다 — 주소창 왼쪽 아이콘 → 마이크 허용","");}
+      else if(e.error==="network"){setStatus("인터넷 연결을 확인하세요 — 받아쓰기는 인터넷이 필요합니다","");}
+    };
+    rec.onend=()=>{
+      interimEl.textContent="";
+      if(rec!==recognition)return;
+      if(!rec._stopped){ baseText=contentArea.value.trim(); lastFin=""; sessionSkip=""; setTimeout(()=>{if(rec===recognition&&!rec._stopped){try{rec.start();}catch(e){}}},250); }
+      else{document.body.classList.remove('ic-rec');keepAwake(false);setStatus("녹음 중지됨 — 구분 확인 후 [저장]하세요","done");}
+    };
+    try{rec.start();keepAwake(true);}catch(e){}
+  }
+  $("icStartBtn").addEventListener('click',startRec);
+  function stopRec(){if(recognition){recognition._stopped=true;try{recognition.stop();}catch(e){}}document.body.classList.remove('ic-rec');keepAwake(false);interimEl.textContent="";}
+  $("icStopBtn").addEventListener('click',()=>{stopRec();setStatus("녹음 중지됨 — 구분 확인 후 [저장]하세요","done");});
+
+  function resetForm(){
+    contentArea.value="";baseText="";sessionSkip=lastFin;hoInput.value="";hoInput.classList.remove('autofill');hoManual=false;autoPurpose="";
+    carInput.value="";carInput.classList.remove('warn','autofill');purposeInput.value="";carManual=false;purposeManual=false;
+    document.querySelectorAll('#icSrcGroup .ic-src-btn').forEach(x=>x.classList.remove('on'));selectedSrc="";
+    typeManual=false;setType("","",false);
+  }
+  $("icClearBtn").addEventListener('click',()=>{resetForm();contentArea.focus();});
+
+  // ── 저장소 ──
+  function loadRecords(){try{return JSON.parse(localStorage.getItem(KEY)||"[]");}catch(e){return [];}}
+  function saveRecords(r){localStorage.setItem(KEY,JSON.stringify(r));}
+  function loadV(){try{return JSON.parse(localStorage.getItem(VKEY)||"[]");}catch(e){return [];}}
+  function saveV(r){localStorage.setItem(VKEY,JSON.stringify(r));}
+
+  function saveOne(){
+    classify();
+    const content=contentArea.value.trim();
+    if(!recType){
+      if(!content){alert("내용이 비어 있습니다.");return;}
+      alert("방문차량인지 인터폰민원인지 판별되지 않았습니다.\n마지막에 차량번호 또는 발신처를 말하거나, [저장 구분] 버튼을 눌러주세요.");return;
+    }
+    const now=new Date();
+    if(recType==="vehicle"){
+      const car=carInput.value.trim();
+      const hv=hoInput.value;const md=hv.match(/(\d{1,4})\s*동/);const mh=hv.match(/(\d{1,5})\s*호/);
+      if(!car&&!md){alert("차량번호 또는 방문동이 필요합니다.");return;}
+      if(car.indexOf("?")>=0&&!confirm("차량번호에 '?'(인식 못한 글자)가 있습니다: "+car+"\n고치지 않고 이대로 저장할까요?"))return;
+      let phone="";try{phone=(parseVehicleText(content).phone)||"";}catch(e){}
+      const rec={car,dong:md?md[1]+"동":"",ho:mh?mh[1]+"호":"",purpose:purposeInput.value.trim(),phone,
+        time:(typeof nowText==="function"?nowText():now.toLocaleString()),voice:content,plateImage:null,via:"인터폰화면"};
+      const rs=loadV();rs.push(rec);
+      try{saveV(rs);}catch(e){alert("저장 공간이 가득 찼습니다. [엑셀 저장] 후 [전체 삭제]로 정리해주세요.");return;}
+      
+      setStatus("🚗 방문차량으로 저장 완료 ✓ ("+(car||rec.dong)+")","done");
+    }else{
+      const rec={date:now.getFullYear()+"-"+p2(now.getMonth()+1)+"-"+p2(now.getDate()),time:p2(now.getHours())+":"+p2(now.getMinutes()),src:selectedSrc||"(미선택)",ho:hoInput.value.trim(),purpose:autoPurpose||"",content:content};
+      const rs=loadRecords();rs.push(rec);saveRecords(rs);
+      setStatus("📞 인터폰민원으로 저장 완료 ✓ 다음 호출을 기다리세요","done");
+    }
+    resetForm();renderTable();
+  }
+  $("icSaveBtn").addEventListener('click',saveOne);
+  document.addEventListener('keydown',e=>{if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();saveOne();}});
+
+  // ── 통합 목록 ──
+  function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function vDateTime(t){const m=String(t||"").match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);return m?[m[1],m[2]]:[String(t||""),""];}
+  function merged(){
+    const a=loadRecords().map((r,i)=>({k:"intercom",i,date:r.date,time:r.time,who:r.src,ho:r.ho,car:"",purpose:r.purpose,content:r.content}));
+    const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,content:r.voice};});
+    return a.concat(b).sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
+  }
+  function renderTable(){
+    const all=merged();const list=all.filter(r=>viewFilter==="all"||r.k===viewFilter);const box=$("icTableBox");
+    const nv=all.filter(r=>r.k==="vehicle").length,ni=all.length-nv;
+    $("icCount").textContent=all.length?("(🚗 "+nv+"건 · 📞 "+ni+"건)"):"";
+    if(!list.length){box.innerHTML='<div class="ic-empty">아직 저장된 기록이 없습니다.</div>';return;}
+    let h='';
+    list.slice().reverse().forEach(r=>{
+      const v=r.k==="vehicle";
+      h+='<div class="ic-rec-card '+(v?'v':'i')+'">'
+        +'<div class="ic-rc-top">'+(v?'<span class="ic-tag v">🚗 방문차량</span>':'<span class="ic-tag i">📞 '+escapeHtml(r.who)+'</span>')
+        +'<span class="ic-rc-time">'+escapeHtml(r.date.slice(5))+' '+escapeHtml(r.time)+'</span>'
+        +'<button class="ic-del" data-k="'+r.k+'" data-i="'+r.i+'">삭제</button></div>'
+        +'<div class="ic-rc-main">'+(v&&r.car?'<b class="ic-rc-car">'+escapeHtml(r.car)+'</b>':'')+'<span class="ic-rc-ho">'+escapeHtml(r.ho||'동/호 없음')+'</span>'+(r.purpose?'<span class="ic-rc-pur">'+escapeHtml(r.purpose)+'</span>':'')+'</div>'
+        +'<div class="ic-rc-txt">'+escapeHtml(r.content)+'</div></div>';
+    });
+    box.innerHTML=h;
+    box.querySelectorAll('.ic-del').forEach(b=>b.addEventListener('click',()=>{
+      if(!confirm("이 기록을 삭제할까요?"))return;
+      if(b.dataset.k==="vehicle"){const rr=loadV();rr.splice(+b.dataset.i,1);saveV(rr);}
+      else{const rr=loadRecords();rr.splice(+b.dataset.i,1);saveRecords(rr);}
+      renderTable();
+    }));
+  }
+  $("icFilter").addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;viewFilter=b.dataset.f;document.querySelectorAll('#icFilter button').forEach(x=>x.classList.toggle('on',x===b));renderTable();});
+
+  // ── 엑셀: 저장할 때 시트 2개로 갈라서 ──
+  $("icExcelBtn").addEventListener('click',()=>{
+    const ic=loadRecords(),vr=loadV();
+    if(!ic.length&&!vr.length){alert("저장된 기록이 없습니다.");return;}
+    const vRows=vr.map((r,i)=>{const dt=vDateTime(r.time);return {"순번":i+1,"날짜":dt[0],"시간":dt[1],"차량번호":r.car||"","방문동":r.dong||"","방문호수":r.ho||"","방문목적":r.purpose||"","전화번호":r.phone||"","음성원문":r.voice||""};});
+    const iRows=ic.map((r,i)=>({"순번":i+1,"날짜":r.date,"시간":r.time,"발신처":r.src,"동/호수":r.ho||"","방문목적":r.purpose||"","내용":r.content}));
+    const s=new Date();const stamp=s.getFullYear()+p2(s.getMonth()+1)+p2(s.getDate());
+    if(window.XLSX){try{
+      const wb=XLSX.utils.book_new();
+      const ws1=XLSX.utils.json_to_sheet(vRows.length?vRows:[{"순번":"","날짜":"(기록 없음)"}]);ws1['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:8},{wch:9},{wch:12},{wch:15},{wch:50}];
+      const ws2=XLSX.utils.json_to_sheet(iRows.length?iRows:[{"순번":"","날짜":"(기록 없음)"}]);ws2['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:16},{wch:12},{wch:50}];
+      XLSX.utils.book_append_sheet(wb,ws1,"방문차량");XLSX.utils.book_append_sheet(wb,ws2,"인터폰민원");
+      XLSX.writeFile(wb,"경비초소기록_"+stamp+".xlsx");return;
+    }catch(e){}}
+    // 인터넷이 없어 엑셀 엔진을 못 불러온 경우 → CSV 2개로 나눠 저장
+    function dl(rows,name){if(!rows.length)return;const keys=Object.keys(rows[0]);let csv="\uFEFF"+keys.join(",")+"\n";rows.forEach(r=>{csv+=keys.map(k=>'"'+String(r[k]).replace(/"/g,'""')+'"').join(",")+"\n";});const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+    dl(vRows,"방문차량_"+stamp+".csv");setTimeout(()=>dl(iRows,"인터폰민원_"+stamp+".csv"),400);
+    alert("인터넷이 없어 CSV 파일 2개(방문차량 / 인터폰민원)로 나눠 저장했습니다.\n엑셀에서 그대로 열립니다.");
+  });
+  $("icWipeBtn").addEventListener('click',()=>{if(!loadRecords().length&&!loadV().length){alert("삭제할 기록이 없습니다.");return;}if(confirm("방문차량 + 인터폰민원 기록을 모두 삭제합니다. 되돌릴 수 없습니다.\n먼저 [엑셀 저장]을 해두었나요? 계속할까요?")){localStorage.removeItem(KEY);localStorage.removeItem(VKEY);renderTable();}});
+
+  setType("","",false);renderTable();
+})();
+</script>
+</body>
+</html>
