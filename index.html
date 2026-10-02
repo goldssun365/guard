@@ -145,7 +145,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.1</span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -268,35 +268,44 @@ function parseKorNum(s) {
   return total;
 }
 
+// ──────────────────────────────────────────
+// 동/호 분리 (v11.1)
+// 번호판 글자 "호"(예: 160호8774)를 호수로 착각하지 않도록
+// "숫자+호+숫자4자리"는 번호판으로 보고 호수 후보에서 뺍니다.
+// 호수는 "동 바로 뒤의 호"를 가장 먼저 인정합니다.
+// ──────────────────────────────────────────
+const HO_NOT_PLATE = /([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9]))/;
+function splitDongHo(text){
+  // 번호판(숫자2~3+글자+숫자4)을 먼저 "|"로 가려서, 번호판 숫자가 동/호 숫자에 붙지 않게 함
+  // 단, "105동 302호 8774"처럼 동 바로 뒤에 오는 경우는 호수로 남겨둠
+  let conv = koreanNumToArabic(text||"");
+  const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])","g");
+  conv = conv.replace(PL, function(m, off, all){
+    return /[0-9]동\s*$/.test(all.slice(Math.max(0,off-8),off)) ? m : "|";
+  });
+  const clean = conv.replace(/\s/g,"");
+  const out = {dong:"", ho:""};
+  const md = clean.match(/([0-9]{1,4})동/);
+  if(md) out.dong = md[1]+"동";
+  const mdh = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)/);   // 105동302호
+  if(mdh){ out.ho = mdh[1]+"호"; return out; }
+  const rest = clean.replace(/[0-9]{1,4}동/g,"");
+  const re = new RegExp(HO_NOT_PLATE.source,"g"); let m;
+  while((m=re.exec(rest))){ if(m[1].length>=2 || !out.dong){ out.ho=m[1]+"호"; break; } }
+  return out;
+}
+function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"(?:호수|호실|호)(?!\\s*[0-9]{4}(?![0-9]))","g"),""); }
+
 function parseVehicleText(text){
   const R = {};
   // 한글 숫자를 아라비아 숫자로 먼저 변환
   let converted = koreanNumToArabic(text);
   let clean = converted.replace(/\s/g,"");
 
-  // 동 추출
-  let dong = clean.match(/[0-9]{1,4}동/);
-  if(dong) R.dong = dong[0];
-
-  // 호수 추출 (강화버전)
-  let ho = null;
-  // 방법1: "703동1204호" → 동 뒤 숫자 우선
-  let hoMatch = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)?/);
-  if(hoMatch){
-    ho = hoMatch[1] + "호";
-  }
-  // 방법2: 동번호 제거 후 나머지에서 호수 추출
-  if(!ho){
-    let cleanForHo = clean.replace(/[0-9]{1,4}동/g,"");
-    let hoMatch2 = cleanForHo.match(/([0-9]{2,4})(호수?|호실?|호)/);
-    if(hoMatch2) ho = hoMatch2[1] + "호";
-  }
-  // 방법3: "호수" "호실" 표현 대응
-  if(!ho){
-    let hoMatch3 = clean.match(/([0-9]{2,4})(?:호수|호실)/);
-    if(hoMatch3) ho = hoMatch3[1] + "호";
-  }
-  if(ho) R.ho = ho;
+  // 동/호 추출 (번호판 "호" 구분)
+  const dh = splitDongHo(text);
+  if(dh.dong) R.dong = dh.dong;
+  if(dh.ho) R.ho = dh.ho;
 
   // 방문목적 추출
   // ★ 정해진 단어 목록에서만 찾아서 넣습니다. 목록에 없는 말(질문 문장 등)은 절대 넣지 않고 빈칸으로 둡니다.
@@ -350,7 +359,7 @@ function parseVehicleText(text){
   ["차량번호","차번호","번호","넘버","차량넘버","자동차번호"].forEach(w=>{ carRaw=carRaw.replace(new RegExp(w,"g"),""); });
 
   // 동/호 제거
-  carRaw = carRaw.replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,4}호/g,"");
+  carRaw = removeHoNotPlate(carRaw.replace(/[0-9]{1,4}동/g,""));
 
   // 음성인식 한글 오류 보정 (글자→글자)
   carRaw = carRaw
@@ -406,7 +415,7 @@ function parseVehicleText(text){
   let phoneWork = converted; // 한글숫자→아라비아 변환된 텍스트 사용
 
   // 동/호 제거 (전화번호 추출 시 혼동 방지용 — 별도 작업본)
-  phoneWork = phoneWork.replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,4}호/g,"");
+  phoneWork = removeHoNotPlate(phoneWork.replace(/[0-9]{1,4}동/g,""));
 
   // 차량번호 패턴 제거 (한국 번호판 전용 한글만 인정 → "전화" 등 일반 단어와 혼동 방지)
   const PLATE_CHARS = "가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호";
@@ -485,7 +494,7 @@ function parseVehicleText(text){
   function detectSrc(){if(selectedSrc)return;const t=contentArea.value.replace(/\s+/g,"");for(const [label,kw] of SRCLIST){if(t.indexOf(kw.replace(/\s+/g,""))>=0){selectSrc(label);break;}}}
 
   // ── 동/호 ──
-  function extractDongHo(text){if(!text)return "";const t=(typeof koreanNumToArabic==="function"?koreanNumToArabic(text):text).replace(/\s+/g,' ');let dong="",ho="";const md=t.match(/(\d{1,4})\s*동/);const mh=t.match(/(\d{1,5})\s*호/);if(md)dong=md[1]+"동";if(mh)ho=mh[1]+"호";if(dong&&ho)return dong+" "+ho;return dong||ho||"";}
+  function extractDongHo(text){if(!text)return "";const o=splitDongHo(text);if(o.dong&&o.ho)return o.dong+" "+o.ho;return o.dong||o.ho||"";}
   let hoManual=false;
   hoInput.addEventListener('input',()=>{hoManual=true;hoInput.classList.remove('autofill');});
   function flash(el){el.classList.add('autofill');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('autofill'),2500);}
@@ -531,7 +540,7 @@ function parseVehicleText(text){
   function classify(){
     autoFillHo();detectSrc();detectPurpose();
     const raw=(typeof koreanNumToArabic==="function"?koreanNumToArabic(contentArea.value):contentArea.value);
-    const t=raw.replace(/\s+/g,"").replace(/[0-9]{1,4}동/g,"").replace(/[0-9]{1,5}호/g,"");
+    const t=removeHoNotPlate(raw.replace(/[0-9]{1,4}\s*동/g," ")).replace(/\s+/g,"");
     if(!typeManual){
       const pp=lastPlatePos(t), sp=lastSrcPos(t);
       if(pp<0&&sp<0) setType("","",false);
