@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.2</title>
+<title>경비초소 기록 v11.4</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -107,6 +107,12 @@ body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{opacity:.35;}
 .ic-filter button{padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:#fff;font-weight:700;cursor:pointer;font-family:inherit;}
 .ic-filter button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
 
+/* ===== 자동 저장 카운트다운 (v11.4) ===== */
+.ic-auto-bar{display:none;align-items:center;gap:10px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:#fff3cd;border:2px solid var(--accent);font-size:17px;font-weight:900;color:#7a5500;}
+.ic-auto-bar.show{display:flex;}
+.ic-auto-cancel{white-space:nowrap;flex-shrink:0;margin-left:auto;padding:10px 18px;font-size:16px;font-weight:900;border:none;border-radius:8px;background:var(--red);color:#fff;font-family:inherit;cursor:pointer;}
+.ic-auto-toggle{display:flex;align-items:center;gap:8px;width:100%;font-size:15px;font-weight:700;margin:12px 0 4px;color:var(--text);}
+.ic-auto-toggle input{width:22px;height:22px;}
 /* ===== v11 휴대폰 최적화 ===== */
 html{-webkit-text-size-adjust:100%;}
 body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}
@@ -147,6 +153,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
   body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{display:none;}
   .ic-src-btn{padding:10px 12px;font-size:15px;flex:1 1 30%;}
   /* 저장 버튼은 화면 아래 고정 — 한 손으로 바로 누르기 */
+  .ic-auto-bar.show{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:61;margin:0;box-shadow:0 6px 18px rgba(0,0,0,.2);}
   .ic-btn-save-row{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto!important;margin:0!important;z-index:60;padding:18px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.25);}
 }
 
@@ -155,7 +162,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.2</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.4</span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -177,6 +184,10 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
         <button class="ic-type-btn" data-type="intercom">📞 인터폰민원</button>
         <span class="ic-type-reason" id="icTypeReason">아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)</span>
+      </div>
+      <div class="ic-auto-bar" id="icAutoBar">
+        <span id="icAutoText">⏱ 5초 후 자동 저장</span>
+        <button type="button" class="ic-auto-cancel" id="icAutoCancel">취소</button>
       </div>
       <div class="ic-car-row" id="icCarRow">
         <span class="ic-label" style="margin:0;">🚗 차량번호</span>
@@ -208,6 +219,15 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       <div class="ic-foot">
         <button class="ic-btn ic-btn-excel" id="icExcelBtn">📊 엑셀 저장 (방문차량/인터폰 시트 분리)</button>
         <button class="ic-btn ic-btn-danger" id="icWipeBtn">🗑 전체 삭제</button>
+      </div>
+    </div>
+    <div class="ic-card ic-setting">
+      <div class="ic-card-title">⚙️ 우리 단지 설정</div>
+      <div class="ic-ho-row" style="margin:0;">
+        <span class="ic-label" style="margin:0;">동 번호 범위</span>
+        <input class="ic-ho-input" id="icDongRange" type="text" placeholder="예: 101-116" autocomplete="off">
+        <label class="ic-auto-toggle"><input type="checkbox" id="icAutoToggle"> 말이 끝나고 <b>5초</b> 동안 조용하면 <b>자동 저장</b></label>
+        <span class="ic-hint">예) <b>101-116</b> · 여러 개면 <b>101-112, 201-205</b> · 받아쓰기가 "백팔동"을 <b>8동</b>으로 적으면 <b>108동</b>으로 자동 보정</span>
       </div>
     </div>
     <div class="ic-notice">
@@ -285,10 +305,39 @@ function parseKorNum(s) {
 // 호수는 "동 바로 뒤의 호"를 가장 먼저 인정합니다.
 // ──────────────────────────────────────────
 const HO_NOT_PLATE = /([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9]))/;
+// ──────────────────────────────────────────
+// 우리 단지 동 번호 목록 (v11.3)
+// 받아쓰기가 "백팔동"의 '백'을 빼먹고 "8동"으로 적는 경우,
+// 단지에 없는 동이면 끝자리가 맞는 동(108동)으로 자동 보정합니다.
+// ──────────────────────────────────────────
+const DONG_KEY="guardDongRange_v1";
+function getDongRangeText(){ try{ const v=localStorage.getItem(DONG_KEY); return v===null?"101-120":v; }catch(e){ return "101-120"; } }
+function parseDongList(txt){
+  const set=new Set();
+  String(txt||"").split(/[,\s]+/).forEach(part=>{
+    const m=part.match(/^(\d{1,4})(?:[-~](\d{1,4}))?$/); if(!m) return;
+    let a=+m[1], b=m[2]?+m[2]:a; if(a>b){const t=a;a=b;b=t;}
+    if(b-a>500) return;
+    for(let i=a;i<=b;i++) set.add(i);
+  });
+  return set;
+}
+function fixDongNumber(n){
+  const list=parseDongList(getDongRangeText());
+  if(!list.size || list.has(n)) return n;
+  if(n<100){
+    const cands=[...list].filter(d=>d%100===n);
+    if(cands.length===1) return cands[0];
+  }
+  return n;
+}
+
 function splitDongHo(text){
   // 번호판(숫자2~3+글자+숫자4)을 먼저 "|"로 가려서, 번호판 숫자가 동/호 숫자에 붙지 않게 함
   // 단, "105동 302호 8774"처럼 동 바로 뒤에 오는 경우는 호수로 남겨둠
   let conv = koreanNumToArabic(text||"");
+  // "백 8동" / "백8동"처럼 '백'만 따로 적힌 경우 → 108동
+  conv = conv.replace(/백\s*([0-9]{1,2})\s*동/g, function(m,d){ return (100+(+d))+"동"; });
   const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])","g");
   conv = conv.replace(PL, function(m, off, all){
     return /[0-9]동\s*$/.test(all.slice(Math.max(0,off-8),off)) ? m : "|";
@@ -296,7 +345,7 @@ function splitDongHo(text){
   const clean = conv.replace(/\s/g,"");
   const out = {dong:"", ho:""};
   const md = clean.match(/([0-9]{1,4})동/);
-  if(md) out.dong = md[1]+"동";
+  if(md) out.dong = fixDongNumber(+md[1])+"동";
   const mdh = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)/);   // 105동302호
   if(mdh){ out.ho = mdh[1]+"호"; return out; }
   const rest = clean.replace(/[0-9]{1,4}동/g,"");
@@ -605,6 +654,7 @@ function parseVehicleText(text){
       interimEl.textContent=interim?("🗣 "+interim):"";
       const next=(baseText+" "+fin).trim();
       if(next!==contentArea.value){contentArea.value=next;contentArea.scrollTop=contentArea.scrollHeight;classify();}
+      autoTouch();
     };
     rec.onerror=(e)=>{
       if(e.error==="not-allowed"||e.error==="service-not-allowed"){rec._stopped=true;setStatus("마이크 권한이 꺼져 있습니다 — 주소창 왼쪽 아이콘 → 마이크 허용","");}
@@ -663,7 +713,48 @@ function parseVehicleText(text){
     }
     resetForm();renderTable();
   }
-  $("icSaveBtn").addEventListener('click',saveOne);
+  $("icSaveBtn").addEventListener('click',()=>{autoStop();saveOne();});
+
+  // ── 자동 저장 (v11.4) ──
+  // 조건: ① 구분(방문차량/인터폰)이 정해졌고 ② 방문차량이면 차량번호가 '?' 없이 채워졌고
+  //       인터폰이면 발신처가 정해졌을 때 ③ 5초 동안 새 말소리나 입력이 없으면 저장.
+  // 말하는 중(중간 결과 포함)이거나 칸을 고치면 카운트가 처음부터 다시 시작됩니다.
+  const AUTO_KEY="guardAutoSave_v1", AUTO_SEC=5;
+  const autoBar=$("icAutoBar"), autoText=$("icAutoText"), autoToggle=$("icAutoToggle");
+  let autoOn=true; try{autoOn=localStorage.getItem(AUTO_KEY)!=="off";}catch(e){}
+  autoToggle.checked=autoOn;
+  autoToggle.addEventListener('change',()=>{autoOn=autoToggle.checked;try{localStorage.setItem(AUTO_KEY,autoOn?"on":"off");}catch(e){}if(!autoOn)autoStop();setStatus(autoOn?"자동 저장 켜짐 ✓ (5초)":"자동 저장 꺼짐 — [저장] 버튼으로 저장하세요","done");});
+  let autoTimer=null, autoLeft=0, autoCancelledFor=null;
+  function autoReady(){
+    if(!autoOn||!recType)return false;
+    const content=contentArea.value.trim(); if(!content)return false;
+    if(autoCancelledFor===content)return false;              // 이 내용은 사용자가 취소함
+    if(recType==="vehicle"){const car=carInput.value.trim();return !!car&&car.indexOf("?")<0;}
+    return !!selectedSrc;
+  }
+  function autoStop(){clearInterval(autoTimer);autoTimer=null;autoBar.classList.remove('show');}
+  function autoTouch(){
+    autoStop();
+    if(!autoReady())return;
+    autoLeft=AUTO_SEC;
+    const label=recType==="vehicle"?("🚗 "+carInput.value.trim()):("📞 "+selectedSrc);
+    const paint=()=>{autoText.textContent="⏱ "+autoLeft+"초 후 자동 저장 · "+label;};
+    paint();autoBar.classList.add('show');
+    autoTimer=setInterval(()=>{
+      autoLeft--;
+      if(autoLeft>0){paint();return;}
+      autoStop();
+      if(!autoReady())return;
+      saveOne();
+      try{navigator.vibrate&&navigator.vibrate(120);}catch(e){}
+      statusText.textContent="⏱ 자동 저장됨 ✓ — "+statusText.textContent;
+    },1000);
+  }
+  $("icAutoCancel").addEventListener('click',e=>{e.stopPropagation();autoCancelledFor=contentArea.value.trim();autoStop();setStatus("자동 저장 취소됨 — 확인 후 [저장]을 누르세요","done");});
+  // 칸을 고치거나 버튼으로 구분/발신처를 바꾸면 카운트 재시작
+  $("panelIntercom").addEventListener('input',e=>{if(e.target&&e.target.id==="icDongRange")return;autoTouch();});
+  ["icTypeBox","icSrcGroup"].forEach(id=>$(id).addEventListener('click',()=>setTimeout(autoTouch,0)));
+  $("icClearBtn").addEventListener('click',autoStop);
   document.addEventListener('keydown',e=>{if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();saveOne();}});
 
   // ── 통합 목록 ──
@@ -720,6 +811,9 @@ function parseVehicleText(text){
   });
   $("icWipeBtn").addEventListener('click',()=>{if(!loadRecords().length&&!loadV().length){alert("삭제할 기록이 없습니다.");return;}if(confirm("방문차량 + 인터폰민원 기록을 모두 삭제합니다. 되돌릴 수 없습니다.\n먼저 [엑셀 저장]을 해두었나요? 계속할까요?")){localStorage.removeItem(KEY);localStorage.removeItem(VKEY);renderTable();}});
 
+  const dongRangeInput=$("icDongRange");
+  dongRangeInput.value=getDongRangeText();
+  dongRangeInput.addEventListener('change',()=>{try{localStorage.setItem(DONG_KEY,dongRangeInput.value.trim());}catch(e){}const n=parseDongList(dongRangeInput.value).size;setStatus(n?("단지 동 번호 "+n+"개 저장됨 ✓"):"동 번호 범위가 비어 있어 보정을 하지 않습니다","done");if(!hoManual)hoInput.value="";classify();});
   setType("","",false);renderTable();
 })();
 </script>
