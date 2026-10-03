@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.8</title>
+<title>경비초소 기록 v11.11</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -111,6 +111,8 @@ body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{opacity:.35;}
 .ic-dong-summary{width:100%;font-size:15px;font-weight:900;color:var(--green);margin:2px 0 4px;}
 .ic-dong-summary.bad{color:var(--red);}
 .ic-dong-warn{display:none;margin-top:10px;padding:8px 12px;border-radius:8px;background:#fff1f0;color:var(--red);font-weight:900;font-size:15px;}
+.ic-net{display:none;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;background:#e53935;color:#fff;vertical-align:middle;}
+.ic-net.show{display:inline-block;}
 /* ===== 자동 저장 카운트다운 (v11.4) ===== */
 .ic-auto-bar{display:none;align-items:center;gap:10px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:#fff3cd;border:2px solid var(--accent);font-size:17px;font-weight:900;color:#7a5500;}
 .ic-auto-bar.show{display:flex;}
@@ -166,7 +168,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.8</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.11</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -179,15 +181,15 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
       <div class="ic-status-bar">
         <span class="ic-dot" id="icDot"></span>
-        <span class="ic-status-text" id="icStatusText">대기 중 — [음성 시작]을 누르고 질문부터 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다</span>
+        <span class="ic-status-text" id="icStatusText">대기 중 — [녹음 시작]을 누르고 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다.</span>
       </div>
       <div class="ic-interim" id="icInterim"></div>
-      <textarea class="ic-content-area" id="icContentArea" placeholder="여기에 통화 내용이 글자로 채워집니다...&#10;[방문차량] 몇 동 몇 호에 무슨 일로 가세요?  113동 703호 지인방문이요  경기20바4567&#10;[인터폰민원] 몇 호 가세요?  아 네 305호  102동  공동현관문"></textarea>
+      <textarea class="ic-content-area" id="icContentArea"></textarea>
       <div class="ic-type-box" id="icTypeBox">
         <span class="ic-type-label">저장 구분</span>
         <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
         <button class="ic-type-btn" data-type="intercom">📞 인터폰민원</button>
-        <span class="ic-type-reason" id="icTypeReason">아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)</span>
+        <span class="ic-type-reason" id="icTypeReason"></span>
       </div>
       <div class="ic-dong-warn" id="icDongWarn">⚠️ 우리 단지에 없는 동입니다 — 아래 동/호수 칸을 확인해서 고쳐주세요 (자동 저장 안 됨)</div>
       <div class="ic-auto-bar" id="icAutoBar">
@@ -654,7 +656,7 @@ function parseVehicleText(text){
     recType=t;
     document.querySelectorAll('#icTypeBox .ic-type-btn').forEach(b=>b.classList.toggle('on',b.dataset.type===t));
     document.body.classList.toggle('ic-vehicle',t==="vehicle");
-    typeReason.textContent=t?((manual?"✋ 직접 선택: ":"🤖 자동 판별: ")+reason):"아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)";
+    typeReason.textContent=t?((manual?"✋ 직접 선택: ":"🤖 자동 판별: ")+reason):"";
     typeReason.classList.toggle('manual',!!manual);
   }
   $("icTypeBox").addEventListener('click',e=>{const b=e.target.closest('.ic-type-btn');if(!b)return;typeManual=true;setType(b.dataset.type,b.dataset.type==="vehicle"?"방문차량으로 저장":"인터폰민원으로 저장",true);if(b.dataset.type==="vehicle")fillVehicleFields(true);});
@@ -724,6 +726,7 @@ function parseVehicleText(text){
     return out.join(" ");
   }
   function startRec(){
+    if(!navigator.onLine){setStatus("📴 오프라인 상태라 받아쓰기를 할 수 없습니다 — 내용 칸에 직접 입력해주세요","");return;}
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){alert("이 브라우저는 음성인식을 지원하지 않습니다.\n안드로이드는 크롬, 아이폰은 사파리로 열어주세요.");return;}
     if(recognition){try{recognition._stopped=true;recognition.abort();}catch(e){}}
@@ -905,8 +908,19 @@ function parseVehicleText(text){
   paintDongSummary();
   dongRangeInput.addEventListener('input',paintDongSummary);
   dongRangeInput.addEventListener('change',()=>{try{localStorage.setItem(DONG_KEY,dongRangeInput.value.trim());}catch(e){}const set=parseDongList(dongRangeInput.value);setStatus(set.size?("저장됨 ✓ "+describeDongList(set)):"동 번호 범위가 비어 있어 보정을 하지 않습니다","done");if(!hoManual)hoInput.value="";classify();});
+  // ── 오프라인 표시 (v11.9) ──
+  const netEl=$("icNet");
+  function paintNet(){const off=!navigator.onLine;netEl.textContent=off?"📴 오프라인":"";netEl.classList.toggle('show',off);
+    if(off&&!(recognition&&!recognition._stopped))setStatus("📴 인터넷이 끊겼습니다 — 받아쓰기는 안 되지만, 직접 입력·저장·엑셀 내보내기는 됩니다","");}
+  window.addEventListener('online',()=>{paintNet();setStatus("인터넷 다시 연결됨 ✓ — 받아쓰기 사용 가능","done");});
+  window.addEventListener('offline',paintNet);
+  paintNet();
   setType("","",false);renderTable();
 })();
+// ── 서비스 워커 등록: 깃허브가 멈춰도 앱이 열리도록 화면을 휴대폰에 저장 (v11.9) ──
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 </script>
 </body>
 </html>
