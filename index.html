@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.13</title>
+<title>경비초소 기록 v11.14</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -168,7 +168,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.13</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.14</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -235,6 +235,8 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <input class="ic-ho-input" id="icDongRange" type="text" placeholder="예: 101동~116동" autocomplete="off">
         <div class="ic-dong-summary" id="icDongSummary"></div>
         <label class="ic-auto-toggle"><input type="checkbox" id="icAutoToggle"> 말이 끝나고 <b>5초</b> 동안 조용하면 <b>자동 저장</b></label>
+        <label class="ic-auto-toggle"><input type="checkbox" id="icStopOnSave"> <b>저장하면</b> 녹음 <b>자동 중지</b></label>
+        <label class="ic-auto-toggle"><input type="checkbox" id="icStopOnIdle"> <b>30초</b> 동안 말이 없으면 녹음 <b>자동 중지</b></label>
       </div>
     </div>
     <div class="ic-notice">
@@ -732,9 +734,10 @@ function parseVehicleText(text){
     const rec=new SR();recognition=rec;
     rec.lang="ko-KR";rec.maxAlternatives=5;rec.continuous=true;rec.interimResults=true;rec._stopped=false;
     baseText=contentArea.value.trim(); lastFin=""; sessionSkip="";
-    rec.onstart=()=>{setStatus("듣는 중... 마지막에 차량번호 또는 발신처를 말하세요","active");document.body.classList.add('ic-rec');};
+    rec.onstart=()=>{setStatus("듣는 중... 마지막에 차량번호 또는 발신처를 말하세요","active");document.body.classList.add('ic-rec');armIdle();};
     rec.onresult=(event)=>{
       if(rec!==recognition)return;
+      armIdle();
       lastFin=sessionFinals(event.results);
       let fin=lastFin;
       if(sessionSkip){ fin = fin.startsWith(sessionSkip) ? fin.slice(sessionSkip.length).trim() : fin; }
@@ -752,12 +755,32 @@ function parseVehicleText(text){
       interimEl.textContent="";
       if(rec!==recognition)return;
       if(!rec._stopped){ baseText=contentArea.value.trim(); lastFin=""; sessionSkip=""; setTimeout(()=>{if(rec===recognition&&!rec._stopped){try{rec.start();}catch(e){}}},250); }
-      else{document.body.classList.remove('ic-rec');keepAwake(false);setStatus("녹음 중지됨 — 구분 확인 후 [저장]하세요","done");}
+      else{document.body.classList.remove('ic-rec');keepAwake(false);clearTimeout(idleTimer);setStatus(rec._endMsg||"녹음 중지됨 — 구분 확인 후 [저장]하세요","done");}
     };
     try{rec.start();keepAwake(true);}catch(e){}
   }
   $("icStartBtn").addEventListener('click',startRec);
-  function stopRec(){if(recognition){recognition._stopped=true;try{recognition.stop();}catch(e){}}document.body.classList.remove('ic-rec');keepAwake(false);interimEl.textContent="";}
+  function stopRec(msg){clearTimeout(idleTimer);if(recognition){recognition._stopped=true;if(msg)recognition._endMsg=msg;try{recognition.stop();}catch(e){}}document.body.classList.remove('ic-rec');keepAwake(false);interimEl.textContent="";if(msg)setStatus(msg,"done");}
+  function isRecording(){return !!(recognition&&!recognition._stopped);}
+
+  // ── 녹음 자동 중지 (v11.14) ──
+  // ① 저장하면 녹음을 끔  ② 30초 동안 말소리가 없으면 녹음을 끔
+  // → 통화가 끝난 뒤 초소 안의 대화가 구글 받아쓰기로 전송되지 않도록 함
+  const STOP_SAVE_KEY="guardStopOnSave_v1", STOP_IDLE_KEY="guardStopOnIdle_v1", IDLE_SEC=30;
+  function readFlag(k){try{return localStorage.getItem(k)!=="off";}catch(e){return true;}}
+  let stopOnSave=readFlag(STOP_SAVE_KEY), stopOnIdle=readFlag(STOP_IDLE_KEY), idleTimer=null;
+  function armIdle(){
+    clearTimeout(idleTimer);
+    if(!stopOnIdle||!isRecording())return;
+    idleTimer=setTimeout(()=>{
+      if(!isRecording())return;
+      const left=contentArea.value.trim()?" (받아쓴 내용은 그대로 있습니다 — 확인 후 [저장])":"";
+      stopRec("🔇 "+IDLE_SEC+"초 동안 말이 없어 녹음을 껐습니다"+left);
+    },IDLE_SEC*1000);
+  }
+  [["icStopOnSave",STOP_SAVE_KEY,v=>stopOnSave=v,()=>stopOnSave,"저장하면 녹음 자동 중지"],
+   ["icStopOnIdle",STOP_IDLE_KEY,v=>{stopOnIdle=v;if(v)armIdle();else clearTimeout(idleTimer);},()=>stopOnIdle,"30초 무음 시 녹음 자동 중지"]]
+  .forEach(([id,key,set,get,label])=>{const el=$(id);el.checked=get();el.addEventListener('change',()=>{set(el.checked);try{localStorage.setItem(key,el.checked?"on":"off");}catch(e){}setStatus(label+(el.checked?" 켜짐 ✓":" 꺼짐"),"done");});});
   $("icStopBtn").addEventListener('click',()=>{stopRec();setStatus("녹음 중지됨 — 구분 확인 후 [저장]하세요","done");});
 
   function resetForm(){
@@ -800,6 +823,7 @@ function parseVehicleText(text){
       setStatus("📞 인터폰민원으로 저장 완료 ✓ 다음 호출을 기다리세요","done");
     }
     resetForm();renderTable();
+    if(stopOnSave&&isRecording()) stopRec(statusText.textContent.replace(" 다음 호출을 기다리세요","")+" · 🎙️ 녹음 꺼짐 — 다음 통화 때 [녹음 시작]");
   }
   $("icSaveBtn").addEventListener('click',()=>{autoStop();saveOne();});
 
