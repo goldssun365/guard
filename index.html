@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.7</title>
+<title>경비초소 기록 v11.8</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -172,7 +172,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.7</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.8</span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -190,7 +190,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       <div class="ic-mode-badge" id="icModeBadge">받아쓰기 방식 확인 중…</div>
       <div class="ic-kb-guide" id="icKbGuide">⌨️ 키보드의 🎤 마이크 버튼을 누르고 말하세요. 끝나면 키보드 마이크를 다시 눌러 끄세요.</div>
       <div class="ic-interim" id="icInterim"></div>
-      <textarea class="ic-content-area" id="icContentArea" placeholder="여기에 통화 내용이 글자로 채워집니다...&#10;[방문차량] 몇 동 몇 호에 무슨 일로 가세요?  113동 703호 지인방문이요  경기20바4567&#10;[인터폰민원] 몇 호 가세요?  아 네 305호  102동  공동현관문"></textarea>
+      <textarea class="ic-content-area" id="icContentArea" placeholder=""></textarea>
       <div class="ic-type-box" id="icTypeBox">
         <span class="ic-type-label">저장 구분</span>
         <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
@@ -687,7 +687,7 @@ function parseVehicleText(text){
     }
     return out.join(" ");
   }
-  // ── 받아쓰기 방식 (v11.7) ──
+  // ── 받아쓰기 방식 (v11.8) ──
   // web: 브라우저 음성인식. 기기 안 처리(온디바이스)가 되면 그것을 쓰고, 안 되면 인터넷(구글/애플 서버).
   // kb : 휴대폰 키보드의 마이크. 키보드에 오프라인 언어팩이 있으면 기기 안에서 처리됩니다.
   const MODE_KEY="guardSttMode_v1", IDLE_KEY="guardIdleOff_v1", IDLE_SEC=30;
@@ -882,7 +882,7 @@ function parseVehicleText(text){
   $("icClearBtn").addEventListener('click',autoStop);
   document.addEventListener('keydown',e=>{if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();saveOne();}});
 
-  // ── 초소 안내문 출력 (v11.7) ──
+  // ── 초소 안내문 출력 (v11.8) ──
   $("icSignBtn").addEventListener('click',()=>{
     const w=window.open("","_blank");
     if(!w){alert("팝업이 막혔습니다. 브라우저에서 팝업을 허용해 주세요.");return;}
