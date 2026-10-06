@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.8</title>
+<title>경비초소 기록 v11.9</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -84,6 +84,16 @@ body {
 .ic-table th{background:#f0f4ff;color:var(--primary);font-weight:700;white-space:nowrap;}
 .ic-table td.c{text-align:center;white-space:nowrap;}
 .ic-del{background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+ .ic-edit{background:#1565c0;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ic-rc-btns{display:flex;gap:6px;}
+.ic-edited{font-size:12px;font-weight:700;color:#8a4b00;background:#fff3e0;border-radius:10px;padding:1px 8px;}
+.ic-ed-form{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;margin:10px 0 6px;}
+.ic-ed-form label{font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;}
+.ic-ed-form input{width:100%;font-size:17px;padding:8px 10px;border:1.5px solid #9fb3cc;border-radius:8px;font-family:inherit;}
+.ic-ed-form input.car{font-size:20px;font-weight:900;letter-spacing:.5px;}
+.ic-ed-act{display:flex;gap:8px;margin-top:8px;}
+.ic-ed-act button{flex:1;border:none;border-radius:8px;padding:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+.ic-ed-ok{background:var(--green);color:#fff;} .ic-ed-no{background:#e8eaef;color:var(--text);}
 .ic-empty{color:var(--muted);text-align:center;padding:24px;font-size:15px;}
 .ic-count{font-size:14px;color:var(--muted);font-weight:700;}
 .ic-foot{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
@@ -172,7 +182,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.8</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.9</span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -687,7 +697,7 @@ function parseVehicleText(text){
     }
     return out.join(" ");
   }
-  // ── 받아쓰기 방식 (v11.8) ──
+  // ── 받아쓰기 방식 (v11.9) ──
   // web: 브라우저 음성인식. 기기 안 처리(온디바이스)가 되면 그것을 쓰고, 안 되면 인터넷(구글/애플 서버).
   // kb : 휴대폰 키보드의 마이크. 키보드에 오프라인 언어팩이 있으면 기기 안에서 처리됩니다.
   const MODE_KEY="guardSttMode_v1", IDLE_KEY="guardIdleOff_v1", IDLE_SEC=30;
@@ -882,7 +892,7 @@ function parseVehicleText(text){
   $("icClearBtn").addEventListener('click',autoStop);
   document.addEventListener('keydown',e=>{if(e.key==="Enter"&&e.ctrlKey){e.preventDefault();saveOne();}});
 
-  // ── 초소 안내문 출력 (v11.8) ──
+  // ── 초소 안내문 출력 (v11.9) ──
   $("icSignBtn").addEventListener('click',()=>{
     const w=window.open("","_blank");
     if(!w){alert("팝업이 막혔습니다. 브라우저에서 팝업을 허용해 주세요.");return;}
@@ -894,8 +904,8 @@ function parseVehicleText(text){
   function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function vDateTime(t){const m=String(t||"").match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);return m?[m[1],m[2]]:[String(t||""),""];}
   function merged(){
-    const a=loadRecords().map((r,i)=>({k:"intercom",i,date:r.date,time:r.time,who:r.src,ho:r.ho,car:"",purpose:r.purpose,content:r.content}));
-    const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,content:r.voice};});
+    const a=loadRecords().map((r,i)=>({k:"intercom",i,date:r.date,time:r.time,who:r.src,ho:r.ho,car:"",purpose:r.purpose,content:r.content,edited:r.edited}));
+    const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,content:r.voice,edited:r.edited};});
     return a.concat(b).sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
   }
   function renderTable(){
@@ -909,8 +919,9 @@ function parseVehicleText(text){
       h+='<div class="ic-rec-card '+(v?'v':'i')+'">'
         +'<div class="ic-rc-top">'+(v?'<span class="ic-tag v">🚗 방문차량</span>':'<span class="ic-tag i">📞 '+escapeHtml(r.who)+'</span>')
         +'<span class="ic-rc-time">'+escapeHtml(r.date.slice(5))+' '+escapeHtml(r.time)+'</span>'
-        +'<button class="ic-del" data-k="'+r.k+'" data-i="'+r.i+'">삭제</button></div>'
+        +'<span class="ic-rc-btns"><button class="ic-edit" data-k="'+r.k+'" data-i="'+r.i+'">수정</button><button class="ic-del" data-k="'+r.k+'" data-i="'+r.i+'">삭제</button></span></div>'
         +'<div class="ic-rc-main">'+(v&&r.car?'<b class="ic-rc-car">'+escapeHtml(r.car)+'</b>':'')+'<span class="ic-rc-ho">'+escapeHtml(r.ho||'동/호 없음')+'</span>'+(r.purpose?'<span class="ic-rc-pur">'+escapeHtml(r.purpose)+'</span>':'')+'</div>'
+        +(r.edited?'<div><span class="ic-edited">✎ 수정됨 '+escapeHtml(r.edited)+'</span></div>':'')
         +'<div class="ic-rc-txt">'+escapeHtml(r.content)+'</div></div>';
     });
     box.innerHTML=h;
@@ -921,19 +932,53 @@ function parseVehicleText(text){
       renderTable();
     }));
   }
+  // ── 기록 수정 (v11.9): 잘못 인식된 차량번호·동호수 등을 바로 고침. 음성 원문은 그대로 두고 '수정됨' 표시 ──
+  $("icTableBox").addEventListener('click',e=>{
+    const b=e.target.closest('.ic-edit'); if(!b)return;
+    const card=b.closest('.ic-rec-card'); if(card.querySelector('.ic-ed-form'))return;
+    const v=b.dataset.k==="vehicle", idx=+b.dataset.i;
+    const rs=v?loadV():loadRecords(); const r=rs[idx]; if(!r)return;
+    const esc=x=>escapeHtml(x||"");
+    let hoTxt=v?"":(r.ho||"");
+    const fields=v
+      ?[["car","차량번호",r.car,"car"],["dong","방문 동",r.dong],["ho","방문 호수",r.ho],["purpose","방문목적",r.purpose],["phone","전화번호",r.phone]]
+      :[["src","발신처",r.src],["ho","동/호수",hoTxt],["purpose","방문목적",r.purpose]];
+    const form=document.createElement('div');
+    form.innerHTML='<div class="ic-ed-form">'+fields.map(f=>'<label>'+f[1]+'</label><input data-f="'+f[0]+'" class="'+(f[3]||'')+'" value="'+esc(f[2])+'"'+(f[0]==="phone"?' inputmode="tel"':'')+'>').join('')+'</div>'
+      +'<div class="ic-ed-act"><button class="ic-ed-no">취소</button><button class="ic-ed-ok">수정 저장</button></div>';
+    card.querySelector('.ic-rc-main').replaceWith(form);
+    const first=form.querySelector('input'); first.focus(); try{first.setSelectionRange(0,first.value.length);}catch(e){}
+    form.querySelector('.ic-ed-no').addEventListener('click',()=>renderTable());
+    form.querySelector('.ic-ed-ok').addEventListener('click',()=>{
+      const val={}; form.querySelectorAll('input').forEach(i=>val[i.dataset.f]=i.value.trim());
+      if(v){
+        val.car=val.car.replace(/\s+/g,"");
+        if(val.dong&&/^\d+$/.test(val.dong))val.dong+="동";
+        if(val.ho&&/^\d+$/.test(val.ho))val.ho+="호";
+        if(!val.car&&!val.dong){alert("차량번호 또는 방문 동이 필요합니다.");return;}
+        if(val.car.indexOf("?")>=0&&!confirm("차량번호에 '?'가 남아 있습니다: "+val.car+"\n이대로 저장할까요?"))return;
+      }
+      const cur=v?loadV():loadRecords(); const t=cur[idx]; if(!t){renderTable();return;}
+      Object.assign(t,val);
+      const n=new Date(); t.edited=p2(n.getMonth()+1)+"-"+p2(n.getDate())+" "+p2(n.getHours())+":"+p2(n.getMinutes());
+      try{v?saveV(cur):saveRecords(cur);}catch(err){alert("저장 공간이 가득 찼습니다. [엑셀 저장] 후 정리해주세요.");return;}
+      setStatus("✎ 기록을 수정했습니다"+(v&&val.car?" ("+val.car+")":""),"done");
+      renderTable();
+    });
+  });
   $("icFilter").addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;viewFilter=b.dataset.f;document.querySelectorAll('#icFilter button').forEach(x=>x.classList.toggle('on',x===b));renderTable();});
 
   // ── 엑셀: 저장할 때 시트 2개로 갈라서 ──
   $("icExcelBtn").addEventListener('click',()=>{
     const ic=loadRecords(),vr=loadV();
     if(!ic.length&&!vr.length){alert("저장된 기록이 없습니다.");return;}
-    const vRows=vr.map((r,i)=>{const dt=vDateTime(r.time);return {"순번":i+1,"날짜":dt[0],"시간":dt[1],"차량번호":r.car||"","방문동":r.dong||"","방문호수":r.ho||"","방문목적":r.purpose||"","전화번호":r.phone||"","음성원문":r.voice||""};});
-    const iRows=ic.map((r,i)=>({"순번":i+1,"날짜":r.date,"시간":r.time,"발신처":r.src,"동/호수":r.ho||"","방문목적":r.purpose||"","내용":r.content}));
+    const vRows=vr.map((r,i)=>{const dt=vDateTime(r.time);return {"순번":i+1,"날짜":dt[0],"시간":dt[1],"차량번호":r.car||"","방문동":r.dong||"","방문호수":r.ho||"","방문목적":r.purpose||"","전화번호":r.phone||"","음성원문":r.voice||"","수정일시":r.edited||""};});
+    const iRows=ic.map((r,i)=>({"순번":i+1,"날짜":r.date,"시간":r.time,"발신처":r.src,"동/호수":r.ho||"","방문목적":r.purpose||"","내용":r.content,"수정일시":r.edited||""}));
     const s=new Date();const stamp=s.getFullYear()+p2(s.getMonth()+1)+p2(s.getDate());
     if(window.XLSX){try{
       const wb=XLSX.utils.book_new();
-      const ws1=XLSX.utils.json_to_sheet(vRows.length?vRows:[{"순번":"","날짜":"(기록 없음)"}]);ws1['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:8},{wch:9},{wch:12},{wch:15},{wch:50}];
-      const ws2=XLSX.utils.json_to_sheet(iRows.length?iRows:[{"순번":"","날짜":"(기록 없음)"}]);ws2['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:16},{wch:12},{wch:50}];
+      const ws1=XLSX.utils.json_to_sheet(vRows.length?vRows:[{"순번":"","날짜":"(기록 없음)"}]);ws1['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:8},{wch:9},{wch:12},{wch:15},{wch:50},{wch:12}];
+      const ws2=XLSX.utils.json_to_sheet(iRows.length?iRows:[{"순번":"","날짜":"(기록 없음)"}]);ws2['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:16},{wch:12},{wch:50},{wch:12}];
       XLSX.utils.book_append_sheet(wb,ws1,"방문차량");XLSX.utils.book_append_sheet(wb,ws2,"인터폰민원");
       XLSX.writeFile(wb,"경비초소기록_"+stamp+".xlsx");return;
     }catch(e){}}
