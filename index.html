@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v11.9</title>
+<title>경비초소 기록 v12.0</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
 <meta property="og:title" content="경비초소 기록">
 <meta property="og:description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
-<meta property="og:url" content="https://goldssun365.github.io/guard/">
-<meta property="og:image" content="https://goldssun365.github.io/guard/og-image.png">
+<meta property="og:url" content="https://guard-post.pages.dev/">
+<meta property="og:image" content="https://guard-post.pages.dev/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -127,6 +127,12 @@ body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{opacity:.35;}
 .ic-filter button{padding:6px 12px;border:1px solid var(--border);border-radius:16px;background:#fff;font-weight:700;cursor:pointer;font-family:inherit;}
 .ic-filter button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
 
+.ic-ho-input.warn{border-color:var(--red)!important;background:#fff1f0!important;}
+.ic-dong-warn{display:none;margin-top:10px;padding:8px 12px;border-radius:8px;background:#fff1f0;color:var(--red);font-weight:900;font-size:15px;}
+.ic-dong-summary{width:100%;font-size:15px;font-weight:900;color:var(--green);margin:2px 0 4px;}
+.ic-dong-summary.bad{color:var(--red);}
+.ic-net{display:none;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;background:#e53935;color:#fff;vertical-align:middle;}
+.ic-net.show{display:inline-block;}
 /* ===== 자동 저장 카운트다운 (v11.4) ===== */
 .ic-auto-bar{display:none;align-items:center;gap:10px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:#fff3cd;border:2px solid var(--accent);font-size:17px;font-weight:900;color:#7a5500;}
 .ic-auto-bar.show{display:flex;}
@@ -182,7 +188,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v11.9</span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.0</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -195,7 +201,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
       <div class="ic-status-bar">
         <span class="ic-dot" id="icDot"></span>
-        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작]을 누르고 질문부터 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다</span>
+        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작]을 누르고 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다.</span>
       </div>
       <div class="ic-mode-badge" id="icModeBadge">받아쓰기 방식 확인 중…</div>
       <div class="ic-kb-guide" id="icKbGuide">⌨️ 키보드의 🎤 마이크 버튼을 누르고 말하세요. 끝나면 키보드 마이크를 다시 눌러 끄세요.</div>
@@ -205,8 +211,9 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <span class="ic-type-label">저장 구분</span>
         <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
         <button class="ic-type-btn" data-type="intercom">📞 인터폰민원</button>
-        <span class="ic-type-reason" id="icTypeReason">아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)</span>
+        <span class="ic-type-reason" id="icTypeReason"></span>
       </div>
+      <div class="ic-dong-warn" id="icDongWarn">⚠️ 우리 단지에 없는 동입니다 — 아래 동/호수 칸을 확인해서 고쳐주세요 (자동 저장 안 됨)</div>
       <div class="ic-auto-bar" id="icAutoBar">
         <span id="icAutoText">⏱ 5초 후 자동 저장</span>
         <button type="button" class="ic-auto-cancel" id="icAutoCancel">취소</button>
@@ -247,7 +254,8 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       <div class="ic-card-title">⚙️ 우리 단지 설정</div>
       <div class="ic-ho-row" style="margin:0;">
         <span class="ic-label" style="margin:0;">동 번호 범위</span>
-        <input class="ic-ho-input" id="icDongRange" type="text" placeholder="예: 101-116" autocomplete="off">
+        <input class="ic-ho-input" id="icDongRange" type="text" placeholder="예: 101동~116동" autocomplete="off">
+        <div class="ic-dong-summary" id="icDongSummary"></div>
         <label class="ic-auto-toggle"><input type="checkbox" id="icAutoToggle"> 말이 끝나고 <b>5초</b> 동안 조용하면 <b>자동 저장</b></label>
         <div class="ic-mode-row" id="icModeRow">
           <span class="ic-label" style="margin:0;">받아쓰기 방식</span>
@@ -257,7 +265,6 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <label class="ic-auto-toggle"><input type="checkbox" id="icIdleToggle"> <span>말소리 없이 <b>30초</b> 지나면 받아쓰기 <b>자동 꺼짐</b></span></label>
         <span class="ic-hint">저장하면 받아쓰기는 항상 꺼집니다. 다음 방문자 때 다시 [받아쓰기 시작]을 누르세요.</span>
         <button type="button" class="ic-btn ic-btn-clear ic-sign-btn" id="icSignBtn">📄 초소 안내문 출력</button>
-        <span class="ic-hint">예) <b>101-116</b> · 여러 개면 <b>101-112, 201-205</b> · 받아쓰기가 "백팔동"을 <b>8동</b>으로 적으면 <b>108동</b>으로 자동 보정</span>
       </div>
     </div>
     <div class="ic-notice">
@@ -283,7 +290,7 @@ function koreanNumToArabic(str) {
   // 1단계: 한글 숫자가 포함된 "XXX동" "XXX호" 패턴을 찾아서 변환
   // 동/호 앞의 한글 숫자 덩어리를 숫자로 바꿔줌
   str = str.replace(
-    /((?:[일이삼사오육칠팔구십백천만]+))([동호])/g,
+    /((?:[공영일이삼사오육칠팔구십백천만]+))([동호])/g,
     function(match, numPart, suffix){
       const converted = parseKorNum(numPart);
       if(converted > 0) return converted + suffix;
@@ -296,6 +303,12 @@ function koreanNumToArabic(str) {
 function parseKorNum(s) {
   // "칠백오" → 705, "삼백십" → 310, "천이백사" → 1204
   if(!s) return 0;
+  // v12: 단위(십·백·천) 없이 한 자리씩 읽은 경우는 이어붙임 — "일일이"→112, "일삼공오"→1305
+  if(!/[십백천만]/.test(s) && s.length>=2){
+    const dm={'공':'0','영':'0','일':'1','이':'2','삼':'3','사':'4','오':'5','육':'6','칠':'7','팔':'8','구':'9'};
+    let out=""; for(const c of s){ if(dm[c]===undefined) return 0; out+=dm[c]; }
+    return parseInt(out,10)||0;
+  }
 
   const digitMap = {
     '일':1,'이':2,'삼':3,'사':4,'오':5,
@@ -341,10 +354,20 @@ const HO_NOT_PLATE = /([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9]))/;
 // 단지에 없는 동이면 끝자리가 맞는 동(108동)으로 자동 보정합니다.
 // ──────────────────────────────────────────
 const DONG_KEY="guardDongRange_v1";
-function getDongRangeText(){ try{ const v=localStorage.getItem(DONG_KEY); return v===null?"101-120":v; }catch(e){ return "101-120"; } }
+function getDongRangeText(){ try{ const v=localStorage.getItem(DONG_KEY); return v===null?"101동~116동":v; }catch(e){ return "101동~116동"; } }
+function normalizeDongRangeText(txt){
+  // "101동~116동", "101동부터 116동까지", "101동에서 116동" → "101-116"
+  return String(txt||"").replace(/동/g," ").replace(/부터|에서|[~∼〜–—]/g,"-").replace(/까지|번지|개동/g," ").replace(/\s*-\s*/g,"-").replace(/[·/]/g,",");
+}
+function describeDongList(set){
+  const arr=[...set].sort((a,b)=>a-b); if(!arr.length) return "";
+  const parts=[]; let st=arr[0], pv=arr[0];
+  for(let i=1;i<=arr.length;i++){ const v=arr[i]; if(v===pv+1){pv=v;continue;} parts.push(st===pv? st+"동" : st+"동~"+pv+"동"); st=pv=v; }
+  return parts.join(", ")+" (총 "+arr.length+"개 동)";
+}
 function parseDongList(txt){
   const set=new Set();
-  String(txt||"").split(/[,\s]+/).forEach(part=>{
+  normalizeDongRangeText(txt).split(/[,\s]+/).forEach(part=>{
     const m=part.match(/^(\d{1,4})(?:[-~](\d{1,4}))?$/); if(!m) return;
     let a=+m[1], b=m[2]?+m[2]:a; if(a>b){const t=a;a=b;b=t;}
     if(b-a>500) return;
@@ -395,16 +418,30 @@ function splitDongHo(text){
   conv = koreanNumToArabic(conv);
   // ③ 층+호로 말한 경우: "13층 3호" → "1303호", "23층 5호" → "2305호"
   conv = conv.replace(/([0-9]{1,2})\s*층\s*([0-9]{1,2})\s*호/g, function(m,f,u){ return (+f*100 + +u)+"호"; });
-  // "백 8동" / "백8동"처럼 '백'만 따로 적힌 경우 → 108동
-  conv = conv.replace(/백\s*([0-9]{1,2})\s*동/g, function(m,d){ return (100+(+d))+"동"; });
+  // "백 8동" / "100 12동"처럼 '백'이 따로 적힌 경우 → 108동, 112동
+  conv = conv.replace(/(?:백|100)\s*([0-9]{1,2})\s*동/g, function(m,d){ return (100+(+d))+"동"; });
+  // "천 305호" / "1000 305호" → 1305호
+  conv = conv.replace(/(?:천|1000)\s*([0-9]{3})\s*호/g, function(m,d){ return (1000+(+d))+"호"; });
+  // 숫자가 띄어서 적힌 경우: "11 2동"→112동, "13 05호"→1305호, "1 305호"→1305호
+  conv = conv.replace(/(^|[^0-9])([0-9]{1,2})\s+([0-9]{1,2})\s*동/g, function(m,p,a,b){ const j=a+b; return j.length===3? p+j+"동" : m; });
+  conv = conv.replace(/(^|[^0-9])([0-9]{1,2})\s+([0-9]{2,3})\s*호/g, function(m,p,a,b){ const j=a+b; return (j.length===3||j.length===4)? p+j+"호" : m; });
   const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])","g");
   conv = conv.replace(PL, function(m, off, all){
     return /[0-9]동\s*$/.test(all.slice(Math.max(0,off-8),off)) ? m : "|";
   });
   const clean = conv.replace(/\s/g,"");
   const out = {dong:"", ho:""};
-  const md = clean.match(/([0-9]{1,4})동/);
-  if(md) out.dong = fixDongNumber(+md[1])+"동";
+  // 동 후보가 여러 개면(예: "이동 중이에요 114동") 우리 단지에 있는 동을 우선 선택
+  const dl = parseDongList(getDongRangeText());
+  const dongs = []; let dm; const dre=/([0-9]{1,4})동/g;
+  while((dm=dre.exec(clean))){ dongs.push({raw:+dm[1], n:fixDongNumber(+dm[1]), end:dm.index+dm[0].length}); }
+  // ① 받아쓴 그대로 단지에 있는 동 → ② 보정해서 단지에 있는 동 → ③ 첫 번째
+  const pick = dongs.find(d=>dl.size&&dl.has(d.raw)) || dongs.find(d=>dl.size&&dl.has(d.n)) || dongs[0];
+  if(pick){
+    out.dong = pick.n+"동";
+    const after = clean.slice(pick.end).match(/^([0-9]{1,4})(?:호수?|호실?)/);
+    if(after){ out.ho = after[1]+"호"; return out; }
+  }
   const mdh = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)/);   // 105동302호
   if(mdh){ out.ho = mdh[1]+"호"; return out; }
   const rest = clean.replace(/[0-9]{1,4}동/g,"");
@@ -615,9 +652,11 @@ function parseVehicleText(text){
   // ── 동/호 ──
   function extractDongHo(text){if(!text)return "";const o=splitDongHo(text);if(o.dong&&o.ho)return o.dong+" "+o.ho;return o.dong||o.ho||"";}
   let hoManual=false;
-  hoInput.addEventListener('input',()=>{hoManual=true;hoInput.classList.remove('autofill');});
+  hoInput.addEventListener('input',()=>{hoManual=true;hoInput.classList.remove('autofill');checkDongWarn();});
+  function dongNotInList(){const m=hoInput.value.match(/(\d{1,4})\s*동/);if(!m)return false;const list=parseDongList(getDongRangeText());return list.size>0&&!list.has(+m[1]);}
+  function checkDongWarn(){const bad=dongNotInList();hoInput.classList.toggle('warn',bad);const w=$("icDongWarn");if(w)w.style.display=bad?"block":"none";}
   function flash(el){el.classList.add('autofill');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('autofill'),2500);}
-  function autoFillHo(){if(hoManual&&hoInput.value.trim())return;const f=extractDongHo(contentArea.value);if(f&&f!==hoInput.value){hoInput.value=f;flash(hoInput);}}
+  function autoFillHo(){if(!(hoManual&&hoInput.value.trim())){const f=extractDongHo(contentArea.value);if(f&&f!==hoInput.value){hoInput.value=f;flash(hoInput);}}checkDongWarn();}
 
   // ── 방문목적(인터폰용) ──
   const PLIST=[["어린이집","어린이집"],["인테리어","인테리어"],["이유식배달","이유식"],["카드배송","카드"],["세탁배송","세탁"],["우유배달","우유"],["가구배송","가구"],["침대배송","침대"],["꽃배달","꽃"],["음식배달","음식"],["우편물","우편"],["학원","학원"],["당근","당근"],["가전","가전"],["택배","택배"],["친구집","친구집"],["지인방문","지인"],["친구방문","친구방문"],["지하로 내려감","지하"],["1층으로 올라감","1층"]];
@@ -642,7 +681,7 @@ function parseVehicleText(text){
     recType=t;
     document.querySelectorAll('#icTypeBox .ic-type-btn').forEach(b=>b.classList.toggle('on',b.dataset.type===t));
     document.body.classList.toggle('ic-vehicle',t==="vehicle");
-    typeReason.textContent=t?((manual?"✋ 직접 선택: ":"🤖 자동 판별: ")+reason):"아직 판별 전 (차량번호나 발신처를 말하면 자동 선택)";
+    typeReason.textContent=t?((manual?"✋ 직접 선택: ":"🤖 자동 판별: ")+reason):"";
     typeReason.classList.toggle('manual',!!manual);
   }
   $("icTypeBox").addEventListener('click',e=>{const b=e.target.closest('.ic-type-btn');if(!b)return;typeManual=true;setType(b.dataset.type,b.dataset.type==="vehicle"?"방문차량으로 저장":"인터폰민원으로 저장",true);if(b.dataset.type==="vehicle")fillVehicleFields(true);});
@@ -685,11 +724,23 @@ function parseVehicleText(text){
     }catch(e){}
   }
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&recognition&&!recognition._stopped)keepAwake(true);});
+  function altScore(t){
+    let sc=0; const list=parseDongList(getDongRangeText()); const o=splitDongHo(t);
+    if(o.dong){ sc+=1; if(list.size&&list.has(parseInt(o.dong,10))) sc+=3; }
+    if(o.ho) sc+=1;
+    if(/[0-9]{2,3}\s*[가-힣]\s*[0-9]{4}(?![0-9])/.test(normalizeSpokenPlate(t))) sc+=1;
+    return sc;
+  }
+  function pickBestAlt(res){
+    let best=res[0]?res[0].transcript.trim():"", bestSc=-1;
+    for(let k=0;k<res.length;k++){ const t=(res[k].transcript||"").trim(); if(!t)continue; const sc=altScore(t)-k*0.01; if(sc>bestSc){bestSc=sc;best=t;} }
+    return best;
+  }
   function sessionFinals(results){
     const out=[];
     for(let i=0;i<results.length;i++){
       if(!results[i].isFinal)continue;
-      const tr=results[i][0].transcript.trim(); if(!tr)continue;
+      const tr=pickBestAlt(results[i]); if(!tr)continue;
       const last=out.length?out[out.length-1]:"";
       if(last&&tr.replace(/\s/g,"").startsWith(last.replace(/\s/g,""))) out[out.length-1]=tr;      // 누적 반복 → 교체
       else if(last&&last.replace(/\s/g,"").startsWith(tr.replace(/\s/g,""))) continue;           // 이미 포함
@@ -769,7 +820,7 @@ function parseVehicleText(text){
     if(!SR){alert("이 브라우저는 자동 받아쓰기를 지원하지 않습니다.\n설정에서 [키보드 받아쓰기]를 고르거나, 안드로이드는 크롬·아이폰은 사파리로 열어주세요.");return;}
     if(recognition){try{recognition._stopped=true;recognition._quiet=true;recognition.abort();}catch(e){}}
     const rec=new SR();recognition=rec;
-    rec.lang="ko-KR";rec.continuous=true;rec.interimResults=true;rec._stopped=false;
+    rec.lang="ko-KR";rec.maxAlternatives=5;rec.continuous=true;rec.interimResults=true;rec._stopped=false;
     if(localOK===true){try{rec.processLocally=true;}catch(e){} try{if("mode" in rec)rec.mode="ondevice-only";}catch(e){}}
     baseText=contentArea.value.trim(); lastFin=""; sessionSkip="";
     rec.onstart=()=>{setStatus((localOK?"🔒 ":"")+"듣는 중... 마지막에 차량번호 또는 발신처를 말하세요","active");document.body.classList.add('ic-rec');};
@@ -864,6 +915,7 @@ function parseVehicleText(text){
     if(!autoOn||!recType)return false;
     const content=contentArea.value.trim(); if(!content)return false;
     if(autoCancelledFor===content)return false;              // 이 내용은 사용자가 취소함
+    if(dongNotInList())return false;                          // 단지에 없는 동 → 사람이 확인 후 저장
     if(recType==="vehicle"){const car=carInput.value.trim();return !!car&&car.indexOf("?")<0;}
     return !!selectedSrc;
   }
@@ -991,9 +1043,22 @@ function parseVehicleText(text){
 
   const dongRangeInput=$("icDongRange");
   dongRangeInput.value=getDongRangeText();
-  dongRangeInput.addEventListener('change',()=>{try{localStorage.setItem(DONG_KEY,dongRangeInput.value.trim());}catch(e){}const n=parseDongList(dongRangeInput.value).size;setStatus(n?("단지 동 번호 "+n+"개 저장됨 ✓"):"동 번호 범위가 비어 있어 보정을 하지 않습니다","done");if(!hoManual)hoInput.value="";classify();});
+  const dongSummary=$("icDongSummary");
+  function paintDongSummary(){const set=parseDongList(dongRangeInput.value);dongSummary.textContent=set.size?("✓ 인식된 동: "+describeDongList(set)):(dongRangeInput.value.trim()?"⚠️ 동 번호를 알아보지 못했습니다 — 예) 101동~116동":"동 번호를 비워두면 동 보정을 하지 않습니다");dongSummary.classList.toggle('bad',!set.size&&!!dongRangeInput.value.trim());}
+  paintDongSummary();
+  dongRangeInput.addEventListener('input',paintDongSummary);
+  dongRangeInput.addEventListener('change',()=>{try{localStorage.setItem(DONG_KEY,dongRangeInput.value.trim());}catch(e){}const set=parseDongList(dongRangeInput.value);setStatus(set.size?("저장됨 ✓ "+describeDongList(set)):"동 번호 범위가 비어 있어 보정을 하지 않습니다","done");if(!hoManual)hoInput.value="";classify();});
+  const netEl=$("icNet");
+  function paintNet(){const off=!navigator.onLine;netEl.textContent=off?"📴 오프라인":"";netEl.classList.toggle('show',off);
+    if(off&&!(recognition&&!recognition._stopped))setStatus("📴 인터넷이 끊겼습니다 — 직접 입력·저장·엑셀 내보내기는 됩니다 (키보드 오프라인 받아쓰기도 가능)","");}
+  window.addEventListener('online',()=>{paintNet();setStatus("인터넷 다시 연결됨 ✓","done");});
+  window.addEventListener('offline',paintNet);
+  paintNet();
   setType("","",false);renderTable();
 })();
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 </script>
 </body>
 </html>

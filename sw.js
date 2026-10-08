@@ -1,10 +1,8 @@
 /* 경비초소 기록 — 서비스 워커 (오프라인 실행용)
  * 화면(index.html): 인터넷이 되면 항상 최신 버전을 받아오고, 안 되면 저장해 둔 화면을 띄움
- * 아이콘·설정 파일: 저장해 둔 것을 바로 사용
- * 엑셀 엔진·글꼴(외부): 한 번 받아오면 저장해 두고 오프라인에서도 사용
- * 버전을 올릴 때는 CACHE 이름만 바꾸면 예전 저장본은 자동으로 정리됩니다.
+ * 아이콘·설정 파일·엑셀 엔진·글꼴: 저장해 둔 것을 바로 사용하고 뒤에서 갱신
  */
-const CACHE = "guard-v11.9";
+const CACHE = "guard-v12.0";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
 const EXTERNAL = ["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
 
@@ -32,7 +30,6 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // 1) 화면(페이지 열기): 인터넷 우선(4초 안에 응답 없으면 저장본) → 항상 최신 버전 반영
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
@@ -48,7 +45,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) 같은 사이트의 아이콘·manifest, 3) 엑셀 엔진(cdnjs)·글꼴: 저장본 우선, 뒤에서 새로 받아 갱신
   const sameOrigin = url.origin === self.location.origin;
   const allowedExternal = /cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(url.hostname);
   if (!sameOrigin && !allowedExternal) return;
