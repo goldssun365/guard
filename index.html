@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v12.6</title>
-<meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
+<title>방문차량 기록 v13.0</title>
+<meta name="description" content="정문 방문차량 음성 기록 — 동·호수, 전화번호, 방문목적, 차량번호를 말하면 자동 기록">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
-<meta property="og:title" content="경비초소 기록">
-<meta property="og:description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
+<meta property="og:title" content="정문 방문차량 기록">
+<meta property="og:description" content="정문 방문차량 음성 기록 — 동·호수, 전화번호, 방문목적, 차량번호를 말하면 자동 기록">
 <meta property="og:url" content="https://guard-post.pages.dev/">
 <meta property="og:image" content="https://guard-post.pages.dev/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -133,6 +133,8 @@ body.ic-vehicle #icSrcLabel,body.ic-vehicle #icSrcGroup{opacity:.35;}
 .ic-dong-summary.bad{color:var(--red);}
 .ic-net{display:none;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;background:#e53935;color:#fff;vertical-align:middle;}
 .ic-net.show{display:inline-block;}
+.ic-car-row{display:flex!important;}
+.ic-save-wrap{display:flex;justify-content:flex-end;margin-top:12px;}
 /* ===== 자동 저장 카운트다운 (v11.4) ===== */
 .ic-auto-bar{display:none;align-items:center;gap:10px;margin:10px 0 0;padding:12px 14px;border-radius:10px;background:#fff3cd;border:2px solid var(--accent);font-size:17px;font-weight:900;color:#7a5500;}
 .ic-auto-bar.show{display:flex;}
@@ -188,12 +190,12 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.6</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🚗 방문차량 기록 <span class="ic-ver">v13.0</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
     <div class="ic-card">
-      <div class="ic-card-title">받아쓰기 <span class="ic-sub">차량번호가 있으면 방문차량 · 없으면 인터폰민원</span></div>
+      <div class="ic-card-title">받아쓰기 <span class="ic-sub">정문 방문차량 전용</span></div>
       <div class="ic-btn-group">
         <button class="ic-btn ic-btn-primary" id="icStartBtn">🎙️ 받아쓰기 시작</button>
         <button class="ic-btn ic-btn-stop" id="icStopBtn">■ 중지</button>
@@ -201,54 +203,40 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
       <div class="ic-status-bar">
         <span class="ic-dot" id="icDot"></span>
-        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작] → ① 어디 가세요 ② 103동 703호 ③ 방문목적 ④ 휴대폰번호 ⑤ 차량번호</span>
+        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작] → ① 어디 가세요 ② 103동 703호 ③ 방문목적·전화번호 ④ 맨 마지막에 차량번호</span>
       </div>
       <div class="ic-mode-badge" id="icModeBadge">받아쓰기 방식 확인 중…</div>
       <div class="ic-kb-guide" id="icKbGuide">⌨️ 키보드의 🎤 마이크 버튼을 누르고 말하세요. 끝나면 키보드 마이크를 다시 눌러 끄세요.</div>
       <div class="ic-interim" id="icInterim"></div>
       <textarea class="ic-content-area" id="icContentArea" placeholder=""></textarea>
-      <div class="ic-type-box" id="icTypeBox">
-        <span class="ic-type-label">저장 구분</span>
-        <button class="ic-type-btn" data-type="vehicle">🚗 방문차량</button>
-        <button class="ic-type-btn" data-type="intercom">📞 인터폰민원</button>
-        <span class="ic-type-reason" id="icTypeReason"></span>
-      </div>
+      <div id="icTypeBox" hidden><span id="icTypeReason"></span></div>
       <div class="ic-dong-warn" id="icDongWarn">⚠️ 우리 단지에 없는 동입니다 — 아래 동/호수 칸을 확인해서 고쳐주세요 (자동 저장 안 됨)</div>
       <div class="ic-auto-bar" id="icAutoBar">
         <span id="icAutoText">⏱ 10초 후 자동 저장</span>
         <button type="button" class="ic-auto-cancel" id="icAutoCancel">취소</button>
       </div>
+      <div class="ic-ho-row">
+        <span class="ic-label" style="margin:0;">① 동/호수</span>
+        <input class="ic-ho-input" id="icHoInput" type="text" placeholder="예: 113동 703호" autocomplete="off">
+      </div>
       <div class="ic-car-row" id="icCarRow">
+        <span class="ic-label" style="margin:0;">② 전화번호</span>
+        <input class="ic-ho-input" id="icPhoneInput" type="text" inputmode="tel" placeholder="예: 010-1234-5678" autocomplete="off" style="width:170px;">
         <span class="ic-label" style="margin:0;">③ 방문목적</span>
         <input class="ic-ho-input" id="icPurposeInput" type="text" placeholder="예: 택배" autocomplete="off" style="width:150px;">
-        <span class="ic-label" style="margin:0;">④ 휴대폰</span>
-        <input class="ic-ho-input" id="icPhoneInput" type="text" inputmode="tel" placeholder="예: 010-1234-5678" autocomplete="off" style="width:170px;">
-        <span class="ic-label" style="margin:0;">⑤ 🚗 차량번호</span>
+        <span class="ic-label" style="margin:0;">④ 🚗 차량번호</span>
         <input class="ic-ho-input ic-car-input" id="icCarInput" type="text" placeholder="예: 경기20바4567" autocomplete="off">
-        <span class="ic-hint">※ "?"가 있으면 한 글자 확인</span>
+        <span class="ic-hint">※ 자동 입력(초록) · 틀리면 직접 수정 · "?"가 있으면 한 글자 확인</span>
       </div>
-      <span class="ic-label" id="icSrcLabel">발신처 (인터폰민원일 때 · 말하거나 눌러서 선택)</span>
-      <div class="ic-src-group" id="icSrcGroup">
-        <button class="ic-src-btn" data-src="입주세대">입주세대</button>
-        <button class="ic-src-btn" data-src="공동현관문">공동현관문</button>
-        <button class="ic-src-btn" data-src="방재실">방재실</button>
-        <button class="ic-src-btn" data-src="후문경비실">후문경비실</button>
-        <button class="ic-src-btn" data-src="관리사무소">관리사무소</button>
-        <button class="ic-src-btn" data-src="기타">기타</button>
-      </div>
-      <div class="ic-ho-row">
-        <span class="ic-label" style="margin:0;">동/호수</span>
-        <input class="ic-ho-input" id="icHoInput" type="text" placeholder="예: 113동 703호" autocomplete="off">
-        <span class="ic-hint">※ 자동 입력(초록) · 틀리면 직접 수정</span>
-        <button class="ic-btn ic-btn-save-row" id="icSaveBtn">💾 저장</button>
-      </div>
+      <div id="icSrcGroup" hidden></div>
+      <div class="ic-save-wrap"><button class="ic-btn ic-btn-save-row" id="icSaveBtn">💾 저장</button></div>
     </div>
     <div class="ic-card">
       <div class="ic-card-title">저장된 기록 <span class="ic-count" id="icCount"></span></div>
-      <div class="ic-filter" id="icFilter"><button data-f="all" class="on">전체</button><button data-f="vehicle">🚗 방문차량</button><button data-f="intercom">📞 인터폰민원</button></div>
+      <div id="icFilter" hidden></div>
       <div id="icTableBox"></div>
       <div class="ic-foot">
-        <button class="ic-btn ic-btn-excel" id="icExcelBtn">📊 엑셀 저장 (방문차량/인터폰 시트 분리)</button>
+        <button class="ic-btn ic-btn-excel" id="icExcelBtn">📊 엑셀 저장</button>
         <button class="ic-btn ic-btn-danger" id="icWipeBtn">🗑 전체 삭제</button>
       </div>
     </div>
@@ -270,9 +258,9 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
     </div>
     <div class="ic-notice">
-      📱 <b>휴대폰 사용법</b> : 크롬(안드로이드) 또는 사파리(아이폰)로 열고, 처음 한 번 <b>마이크 허용</b>을 눌러주세요. <b>음성 파일은 저장하지 않습니다.</b> 말소리는 글자로만 바뀌어 이 휴대폰에 남습니다. 자동 받아쓰기는 휴대폰에 따라 인터넷(구글 서버)을 거칠 수 있으니, 서버 전송이 싫으면 설정에서 <b>키보드 받아쓰기</b>를 고르세요. 받아쓰는 동안 화면은 켜진 채로 유지되고, 저장하면 받아쓰기가 꺼집니다.<br>
-      🔀 <b>말하는 순서</b> : ① <b>"어디 가세요?"</b> → ② <b>103동 703호</b> → ③ <b>방문목적</b>(택배 등) → ④ <b>휴대폰번호</b>(010 1234 5678) → ⑤ <b>맨 마지막에 차량번호</b>(경기20거 3456) → 10초 뒤 자동 저장. 말 속에 <b>차량번호가 있으면 무조건 🚗방문차량</b>입니다. 차량번호 없이 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b>를 말하면 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
-      🏠 동/호수는 "113동 703호"처럼 말하면 자동 입력됩니다. 기록은 <b>이 휴대폰 브라우저 안에만</b> 저장되니, 근무 끝나면 <b>[엑셀 저장]</b>으로 꼭 내보내세요.
+      📱 <b>사용법</b> : 크롬(안드로이드)으로 열고, 처음 한 번 <b>마이크 허용</b>을 눌러주세요. <b>음성 파일은 저장하지 않습니다.</b> 말소리는 글자로만 바뀌어 이 휴대폰에 남습니다.<br>
+      🗣️ <b>말하는 순서</b> : ① <b>"어디 가세요?"</b> → ② <b>103동 703호</b> → ③ <b>방문목적</b>(택배 등)·<b>전화번호</b>(3476에 2389 / 010 1234 5678) → ④ <b>맨 마지막에 차량번호</b>(경기20거 3456) → 말이 끝나고 10초 뒤 자동 저장.<br>
+      📊 기록은 <b>이 휴대폰 안에만</b> 저장되니, 근무 끝나면 <b>[엑셀 저장]</b>으로 꼭 내보내세요.
     </div>
   </div>
 </div>
@@ -712,6 +700,7 @@ function parseVehicleText(text){
   function lastSrcPos(t){let pos=-1;SRC_STRONG.forEach(w=>{const i=t.lastIndexOf(w);if(i>=0)pos=Math.max(pos,i+w.length);});return pos;}
 
   function setType(t,reason,manual){
+    t="vehicle"; reason=""; manual=false;   // v13: 방문차량 전용
     recType=t;
     document.querySelectorAll('#icTypeBox .ic-type-btn').forEach(b=>b.classList.toggle('on',b.dataset.type===t));
     document.body.classList.toggle('ic-vehicle',t==="vehicle");
@@ -924,7 +913,7 @@ function parseVehicleText(text){
       if(car.indexOf("?")>=0&&!confirm("차량번호에 '?'(인식 못한 글자)가 있습니다: "+car+"\n고치지 않고 이대로 저장할까요?"))return;
       let phone=phoneInput.value.trim();if(!phone&&!phoneManual){try{phone=(parseVehicleText(content).phone)||"";}catch(e){}}
       const rec={car,dong:md?md[1]+"동":"",ho:mh?mh[1]+"호":"",purpose:purposeInput.value.trim(),phone,
-        time:(typeof nowText==="function"?nowText():now.toLocaleString()),voice:content,plateImage:null,via:"인터폰화면"};
+        time:(typeof nowText==="function"?nowText():now.toLocaleString()),voice:content,plateImage:null,via:"음성기록"};
       const rs=loadV();rs.push(rec);
       try{saveV(rs);}catch(e){alert("저장 공간이 가득 찼습니다. [엑셀 저장] 후 [전체 삭제]로 정리해주세요.");return;}
       
@@ -986,7 +975,7 @@ function parseVehicleText(text){
   $("icSignBtn").addEventListener('click',()=>{
     const w=window.open("","_blank");
     if(!w){alert("팝업이 막혔습니다. 브라우저에서 팝업을 허용해 주세요.");return;}
-    w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>초소 안내문</title><style>body{font-family:"Noto Sans KR",sans-serif;margin:0;padding:24px;}.s{border:6px solid #1a3a6b;border-radius:16px;padding:32px 28px;max-width:720px;margin:0 auto;text-align:center;}h1{color:#1a3a6b;font-size:34px;margin:0 0 18px;}p{font-size:22px;line-height:1.7;margin:8px 0;}.m{font-size:16px;color:#555;margin-top:22px;}@media print{button{display:none;}}button{display:block;margin:20px auto;font-size:18px;padding:10px 24px;}</style></head><body><div class="s"><h1>방문 기록 안내</h1><p>원활한 출입 관리를 위해<br>경비원이 방문 차량과 인터폰 응대 내용을<br><b>음성 받아쓰기</b>로 기록합니다.</p><p><b>음성 파일은 저장하지 않으며</b>,<br>차량번호·방문 동호수 등 글자 기록만<br>출입 관리 목적으로 보관합니다.</p><p class="m">문의: 관리사무소</p></div><button onclick="window.print()">인쇄하기</button></body></html>');
+    w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>초소 안내문</title><style>body{font-family:"Noto Sans KR",sans-serif;margin:0;padding:24px;}.s{border:6px solid #1a3a6b;border-radius:16px;padding:32px 28px;max-width:720px;margin:0 auto;text-align:center;}h1{color:#1a3a6b;font-size:34px;margin:0 0 18px;}p{font-size:22px;line-height:1.7;margin:8px 0;}.m{font-size:16px;color:#555;margin-top:22px;}@media print{button{display:none;}}button{display:block;margin:20px auto;font-size:18px;padding:10px 24px;}</style></head><body><div class="s"><h1>방문 기록 안내</h1><p>원활한 출입 관리를 위해<br>경비원이 방문 차량 응대 내용을<br><b>음성 받아쓰기</b>로 기록합니다.</p><p><b>음성 파일은 저장하지 않으며</b>,<br>차량번호·방문 동호수 등 글자 기록만<br>출입 관리 목적으로 보관합니다.</p><p class="m">문의: 관리사무소</p></div><button onclick="window.print()">인쇄하기</button></body></html>');
     w.document.close();
   });
 
@@ -996,12 +985,12 @@ function parseVehicleText(text){
   function merged(){
     const a=loadRecords().map((r,i)=>({k:"intercom",i,date:r.date,time:r.time,who:r.src,ho:r.ho,car:"",purpose:r.purpose,content:r.content,edited:r.edited}));
     const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,phone:r.phone,content:r.voice,edited:r.edited};});
-    return a.concat(b).sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
+    return b.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));   // v13: 방문차량만
   }
   function renderTable(){
     const all=merged();const list=all.filter(r=>viewFilter==="all"||r.k===viewFilter);const box=$("icTableBox");
     const nv=all.filter(r=>r.k==="vehicle").length,ni=all.length-nv;
-    $("icCount").textContent=all.length?("(🚗 "+nv+"건 · 📞 "+ni+"건)"):"";
+    $("icCount").textContent=all.length?("(🚗 "+nv+"건)"):"";
     if(!list.length){box.innerHTML='<div class="ic-empty">아직 저장된 기록이 없습니다.</div>';return;}
     let h='';
     list.slice().reverse().forEach(r=>{
@@ -1061,23 +1050,22 @@ function parseVehicleText(text){
   // ── 엑셀: 저장할 때 시트 2개로 갈라서 ──
   $("icExcelBtn").addEventListener('click',()=>{
     const ic=loadRecords(),vr=loadV();
-    if(!ic.length&&!vr.length){alert("저장된 기록이 없습니다.");return;}
-    const vRows=vr.map((r,i)=>{const dt=vDateTime(r.time);return {"순번":i+1,"날짜":dt[0],"시간":dt[1],"차량번호":r.car||"","방문동":r.dong||"","방문호수":r.ho||"","방문목적":r.purpose||"","전화번호":r.phone||"","음성원문":r.voice||"","수정일시":r.edited||""};});
+    if(!vr.length){alert("저장된 기록이 없습니다.");return;}
+    const vRows=vr.map((r,i)=>{const dt=vDateTime(r.time);return {"순번":i+1,"날짜":dt[0],"시간":dt[1],"방문동":r.dong||"","방문호수":r.ho||"","전화번호":r.phone||"","방문목적":r.purpose||"","차량번호":r.car||"","음성원문":r.voice||"","수정일시":r.edited||""};});
     const iRows=ic.map((r,i)=>({"순번":i+1,"날짜":r.date,"시간":r.time,"발신처":r.src,"동/호수":r.ho||"","방문목적":r.purpose||"","내용":r.content,"수정일시":r.edited||""}));
     const s=new Date();const stamp=s.getFullYear()+p2(s.getMonth()+1)+p2(s.getDate());
     if(window.XLSX){try{
       const wb=XLSX.utils.book_new();
-      const ws1=XLSX.utils.json_to_sheet(vRows.length?vRows:[{"순번":"","날짜":"(기록 없음)"}]);ws1['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:8},{wch:9},{wch:12},{wch:15},{wch:50},{wch:12}];
-      const ws2=XLSX.utils.json_to_sheet(iRows.length?iRows:[{"순번":"","날짜":"(기록 없음)"}]);ws2['!cols']=[{wch:6},{wch:12},{wch:8},{wch:14},{wch:16},{wch:12},{wch:50},{wch:12}];
-      XLSX.utils.book_append_sheet(wb,ws1,"방문차량");XLSX.utils.book_append_sheet(wb,ws2,"인터폰민원");
-      XLSX.writeFile(wb,"경비초소기록_"+stamp+".xlsx");return;
+      const ws1=XLSX.utils.json_to_sheet(vRows.length?vRows:[{"순번":"","날짜":"(기록 없음)"}]);ws1['!cols']=[{wch:6},{wch:12},{wch:8},{wch:8},{wch:9},{wch:15},{wch:12},{wch:14},{wch:50},{wch:12}];
+      XLSX.utils.book_append_sheet(wb,ws1,"방문차량");
+      XLSX.writeFile(wb,"방문차량기록_"+stamp+".xlsx");return;
     }catch(e){}}
     // 인터넷이 없어 엑셀 엔진을 못 불러온 경우 → CSV 2개로 나눠 저장
     function dl(rows,name){if(!rows.length)return;const keys=Object.keys(rows[0]);let csv="\uFEFF"+keys.join(",")+"\n";rows.forEach(r=>{csv+=keys.map(k=>'"'+String(r[k]).replace(/"/g,'""')+'"').join(",")+"\n";});const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-    dl(vRows,"방문차량_"+stamp+".csv");setTimeout(()=>dl(iRows,"인터폰민원_"+stamp+".csv"),400);
-    alert("인터넷이 없어 CSV 파일 2개(방문차량 / 인터폰민원)로 나눠 저장했습니다.\n엑셀에서 그대로 열립니다.");
+    dl(vRows,"방문차량기록_"+stamp+".csv");
+    alert("인터넷이 없어 CSV 파일로 저장했습니다.\n엑셀에서 그대로 열립니다.");
   });
-  $("icWipeBtn").addEventListener('click',()=>{if(!loadRecords().length&&!loadV().length){alert("삭제할 기록이 없습니다.");return;}if(confirm("방문차량 + 인터폰민원 기록을 모두 삭제합니다. 되돌릴 수 없습니다.\n먼저 [엑셀 저장]을 해두었나요? 계속할까요?")){localStorage.removeItem(KEY);localStorage.removeItem(VKEY);renderTable();}});
+  $("icWipeBtn").addEventListener('click',()=>{if(!loadV().length){alert("삭제할 기록이 없습니다.");return;}if(confirm("방문차량 기록을 모두 삭제합니다. 되돌릴 수 없습니다.\n먼저 [엑셀 저장]을 해두었나요? 계속할까요?")){localStorage.removeItem(VKEY);renderTable();}});
 
   const dongRangeInput=$("icDongRange");
   dongRangeInput.value=getDongRangeText();
