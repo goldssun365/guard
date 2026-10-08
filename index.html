@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v12.0</title>
+<title>경비초소 기록 v12.3</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -188,12 +188,12 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.0</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.3</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
     <div class="ic-card">
-      <div class="ic-card-title">받아쓰기 <span class="ic-sub">마지막에 말한 단어로 자동 구분</span></div>
+      <div class="ic-card-title">받아쓰기 <span class="ic-sub">차량번호가 있으면 방문차량 · 없으면 인터폰민원</span></div>
       <div class="ic-btn-group">
         <button class="ic-btn ic-btn-primary" id="icStartBtn">🎙️ 받아쓰기 시작</button>
         <button class="ic-btn ic-btn-stop" id="icStopBtn">■ 중지</button>
@@ -201,7 +201,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
       <div class="ic-status-bar">
         <span class="ic-dot" id="icDot"></span>
-        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작]을 누르고 말하세요. 마지막에 차량번호 또는 발신처를 말하면 자동 구분됩니다.</span>
+        <span class="ic-status-text" id="icStatusText">대기 중 — [받아쓰기 시작] → ① 어디 가세요 ② 103동 703호 ③ 방문목적 ④ 휴대폰번호 ⑤ 차량번호</span>
       </div>
       <div class="ic-mode-badge" id="icModeBadge">받아쓰기 방식 확인 중…</div>
       <div class="ic-kb-guide" id="icKbGuide">⌨️ 키보드의 🎤 마이크 버튼을 누르고 말하세요. 끝나면 키보드 마이크를 다시 눌러 끄세요.</div>
@@ -219,10 +219,12 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <button type="button" class="ic-auto-cancel" id="icAutoCancel">취소</button>
       </div>
       <div class="ic-car-row" id="icCarRow">
-        <span class="ic-label" style="margin:0;">🚗 차량번호</span>
+        <span class="ic-label" style="margin:0;">③ 방문목적</span>
+        <input class="ic-ho-input" id="icPurposeInput" type="text" placeholder="예: 택배" autocomplete="off" style="width:150px;">
+        <span class="ic-label" style="margin:0;">④ 휴대폰</span>
+        <input class="ic-ho-input" id="icPhoneInput" type="text" inputmode="tel" placeholder="예: 010-1234-5678" autocomplete="off" style="width:170px;">
+        <span class="ic-label" style="margin:0;">⑤ 🚗 차량번호</span>
         <input class="ic-ho-input ic-car-input" id="icCarInput" type="text" placeholder="예: 경기20바4567" autocomplete="off">
-        <span class="ic-label" style="margin:0;">방문목적</span>
-        <input class="ic-ho-input" id="icPurposeInput" type="text" placeholder="예: 지인방문" autocomplete="off" style="width:150px;">
         <span class="ic-hint">※ "?"가 있으면 한 글자 확인</span>
       </div>
       <span class="ic-label" id="icSrcLabel">발신처 (인터폰민원일 때 · 말하거나 눌러서 선택)</span>
@@ -269,7 +271,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
     </div>
     <div class="ic-notice">
       📱 <b>휴대폰 사용법</b> : 크롬(안드로이드) 또는 사파리(아이폰)로 열고, 처음 한 번 <b>마이크 허용</b>을 눌러주세요. <b>음성 파일은 저장하지 않습니다.</b> 말소리는 글자로만 바뀌어 이 휴대폰에 남습니다. 자동 받아쓰기는 휴대폰에 따라 인터넷(구글 서버)을 거칠 수 있으니, 서버 전송이 싫으면 설정에서 <b>키보드 받아쓰기</b>를 고르세요. 받아쓰는 동안 화면은 켜진 채로 유지되고, 저장하면 받아쓰기가 꺼집니다.<br>
-      🔀 <b>자동 구분 = "마지막에 말한 것"</b> : 끝에 <b>차량번호(경기20바 4567)</b> → 🚗방문차량 / 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b> → 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
+      🔀 <b>말하는 순서</b> : ① <b>"어디 가세요?"</b> → ② <b>103동 703호</b> → ③ <b>방문목적</b>(택배 등) → ④ <b>휴대폰번호</b>(010 1234 5678) → ⑤ <b>맨 마지막에 차량번호</b>(경기20거 3456) → 5초 뒤 자동 저장. 말 속에 <b>차량번호가 있으면 무조건 🚗방문차량</b>입니다. 차량번호 없이 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b>를 말하면 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
       🏠 동/호수는 "113동 703호"처럼 말하면 자동 입력됩니다. 기록은 <b>이 휴대폰 브라우저 안에만</b> 저장되니, 근무 끝나면 <b>[엑셀 저장]</b>으로 꼭 내보내세요.
     </div>
   </div>
@@ -405,10 +407,28 @@ function normalizeSpokenPlate(text){
   });
 }
 
+// ──────────────────────────────────────────
+// 휴대폰 번호 먼저 분리 (v12.2)
+// "010 1234 5678", "010-1234-5678", "공일공 일이삼사 오육칠팔", "공일공 하나둘셋넷 …" 모두 인식.
+// 찾은 번호는 " ☎ "로 가려서, 번호판·동호수 숫자와 섞이지 않게 합니다.
+// ──────────────────────────────────────────
+const PHONE_SEP="[\\s\\-,.]*";
+const PHONE_RE=new RegExp("(?:공|영|0)"+PHONE_SEP+"(?:일|하나|1)"+PHONE_SEP+"(?:공|영|0|일|하나|1|육|여섯|6|칠|일곱|7|팔|여덟|8|구|아홉|9)(?:"+PHONE_SEP+DW_SRC+"){7,8}","g");
+function maskPhone(text){
+  let phone="";
+  const out=String(text||"").replace(PHONE_RE,function(m){
+    const d=spokenToDigits(m);
+    if(d.length<10||d.length>11) return m;
+    if(!phone) phone=d.length===11? d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7) : d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6);
+    return " ☎ ";
+  });
+  return {text:out, phone:phone};
+}
+
 function splitDongHo(text){
   // 번호판(숫자2~3+글자+숫자4)을 먼저 "|"로 가려서, 번호판 숫자가 동/호 숫자에 붙지 않게 함
   // 단, "105동 302호 8774"처럼 동 바로 뒤에 오는 경우는 호수로 남겨둠
-  let conv = text||"";
+  let conv = maskPhone(text||"").text;
   conv = conv.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2");
   conv = normalizeSpokenPlate(conv);
   // ① 받아쓰기가 천 단위 쉼표를 붙이는 경우: "2,305호" → "2305호"
@@ -453,7 +473,8 @@ function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"
 
 function parseVehicleText(text){
   const R = {};
-  text = normalizeSpokenPlate(String(text||"").replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2"));
+  const mp = maskPhone(String(text||"").replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2"));
+  text = normalizeSpokenPlate(mp.text);
   // 한글 숫자를 아라비아 숫자로 먼저 변환
   let converted = koreanNumToArabic(text);
   let clean = converted.replace(/\s/g,"");
@@ -469,36 +490,22 @@ function parseVehicleText(text){
   let rawClean = text.replace(/\s/g,"");
 
   // 복합/긴 표현부터 먼저 검사 (짧은 단어에 묻히지 않도록), 그 다음 짧은 단어 순서
-  const purposeKeywords = [
-    // 복합 표현 (긴 것 먼저)
-    "이유식배달","반찬배달","새벽배달","택배배달","꽃배달","약배달","김치배달","도시락배달","해산물배달","음식배달","가구배송",
-    "부모님집방문","부모님방문","친구집방문","친구방문","지인집방문","지인방문","친척집방문","친척방문","가족방문","세대방문",
-    "인터넷설치","가스점검","보일러점검","정수기점검","가구설치",
-    "어린이집방문","유치원방문","방문수업","가정교사","학습지",
-    "관리실방문","상가방문","노인정방문",
-    "삼성에이에스","이사견적","이사청소",
-    "학원차량","학원버스","퀵서비스","운전기사","대리기사",
-    // 사용자 지정 단어
-    "인테리어","가전","조경","세탁소","세탁배송","이유식","정수기점검",
-    "에이에스",
-    // 짧은 단어
-    "택배","배송","배달","수리","공사","설치","점검","청소","방역","소독",
-    "학원","어린이집","유치원","택시","과외","기사","상가","관리실","노인정","경로당",
-    "이마트","해산물","세탁물","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","오아시스","당근","픽업","지인","친구","친척","정수기",
-    "경비","기타"
+  const purposeKeywords = [ // v12.3: 방문목적 사전 (긴 단어부터 찾음)
+    "부모님집방문","어린이집방문","삼성에이에스","인테리어견적","인터리어견적","인테리어실측","이유식배달","도시락배달","해산물배달","부모님방문","친구집방문","지인집방문","친척집방문","인터넷설치","보일러점검","정수기점검","유치원방문","관리실방문","노인정방문","반찬배달","새벽배달","택배배달","김치배달","음식배달","가구배송","친구방문","지인방문","친척방문","가족방문","세대방문","가스점검","가구설치","방문수업","가정교사","상가방문","이사견적","이사청소","학원차량","학원버스","퀵서비스","운전기사","대리기사","인테리어","세탁배송","에이에스","어린이집","오아시스","부모님집","공사차량","생수배달","우유배달","지역난방","난방점검","꽃배달","약배달","학습지","세탁소","이유식","유치원","관리실","노인정","경로당","이마트","해산물","세탁물","정수기","친구집","친척집","언니집","동생집","부동산","누나집","오빠집","자녀집","아들집","가전","조경","택배","배송","배달","수리","공사","설치","점검","청소","방역","소독","학원","택시","과외","기사","상가","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","당근","픽업","지인","친구","친척","경비","괴외","우유","실측","견적","형집","딸집","생수"
   ];
+  // 받아쓰기 오타·다른 표현을 바른 이름으로
+  const PURPOSE_FIX = {"괴외":"과외","인터리어견적":"인테리어견적","에이에스":"AS","삼성에이에스":"삼성AS"};
   for(let i=0; i<purposeKeywords.length; i++){
     if(rawClean.includes(purposeKeywords[i])){
-      purpose = purposeKeywords[i]; break;
+      purpose = PURPOSE_FIX[purposeKeywords[i]] || purposeKeywords[i]; break;
     }
   }
 
   // 목록에 없는 말은 문장을 그대로 넣지 않고 "기타"로 처리
   // (단, 아무 말도 못 알아들은 경우엔 빈칸으로 둠 — 완전히 빈 음성 결과까지 "기타"로 채우면 오히려 혼란)
-  if(!purpose && rawClean.length >= 2) purpose = "기타";
+  // v12.1: 방문목적을 말하지 않는 순서(어디 가세요 → 동·호 → 차량번호)라서, 목록에 없으면 빈칸으로 둠
 
   // 에이에스 → AS 변환
-  if(purpose === "에이에스") purpose = "AS";
 
   if(purpose) R.purpose = purpose;
 
@@ -585,11 +592,11 @@ function parseVehicleText(text){
     return koreanDigit[ch] !== undefined ? koreanDigit[ch] : ch;
   });
 
-  let phoneFound = "";
+  let phoneFound = mp.phone ? mp.phone.replace(/-/g,"") : "";
 
   // 방법1: 010/011/016~019로 시작하는 10~11자리 번호 그대로 말한 경우
   let phoneClean = phoneConverted.replace(/[^0-9]/g," ").replace(/\s+/g,"");
-  let phoneMatch = phoneClean.match(/01[0-9][0-9]{7,8}/);
+  let phoneMatch = phoneFound ? null : phoneClean.match(/01[0-9][0-9]{7,8}/);
   if(phoneMatch){
     phoneFound = phoneMatch[0];
   }
@@ -660,7 +667,7 @@ function parseVehicleText(text){
 
   // ── 방문목적(인터폰용) ──
   const PLIST=[["어린이집","어린이집"],["인테리어","인테리어"],["이유식배달","이유식"],["카드배송","카드"],["세탁배송","세탁"],["우유배달","우유"],["가구배송","가구"],["침대배송","침대"],["꽃배달","꽃"],["음식배달","음식"],["우편물","우편"],["학원","학원"],["당근","당근"],["가전","가전"],["택배","택배"],["친구집","친구집"],["지인방문","지인"],["친구방문","친구방문"],["지하로 내려감","지하"],["1층으로 올라감","1층"]];
-  function detectPurpose(){if(autoPurpose)return;const t=contentArea.value.replace(/\s+/g,"");for(const [label,kw] of PLIST){if(t.indexOf(kw.replace(/\s+/g,""))>=0){autoPurpose=label;break;}}}
+  function detectPurpose(){if(autoPurpose)return;try{const pp=parseVehicleText(contentArea.value).purpose;if(pp)autoPurpose=pp;}catch(e){}}
 
   // ── 차량번호 위치 찾기 (구분 판별용, 엄격 기준) ──
   const PLATE_CHARS="가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호";
@@ -686,9 +693,12 @@ function parseVehicleText(text){
   }
   $("icTypeBox").addEventListener('click',e=>{const b=e.target.closest('.ic-type-btn');if(!b)return;typeManual=true;setType(b.dataset.type,b.dataset.type==="vehicle"?"방문차량으로 저장":"인터폰민원으로 저장",true);if(b.dataset.type==="vehicle")fillVehicleFields(true);});
 
+  const phoneInput=$("icPhoneInput"); let phoneManual=false;
+  phoneInput.addEventListener('input',()=>{phoneManual=true;});
   function fillVehicleFields(force){
     if(typeof parseVehicleText!=="function")return;
     const R=parseVehicleText(contentArea.value||"");
+    if(!phoneManual&&R.phone&&R.phone!==phoneInput.value){phoneInput.value=R.phone;flash(phoneInput);}
     if(!carManual&&(R.carNumber||force)){if(R.carNumber&&R.carNumber!==carInput.value){carInput.value=R.carNumber;flash(carInput);}}
     if(!purposeManual&&R.purpose&&R.purpose!==purposeInput.value){purposeInput.value=R.purpose;}
     carInput.classList.toggle('warn',carInput.value.indexOf("?")>=0);
@@ -697,12 +707,13 @@ function parseVehicleText(text){
   // 전체 판별: "마지막에 말한 것"이 이긴다
   function classify(){
     autoFillHo();detectSrc();detectPurpose();
-    const raw=koreanNumToArabic(normalizeSpokenPlate(contentArea.value.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g,"$1$2")));
+    const raw=koreanNumToArabic(normalizeSpokenPlate(maskPhone(contentArea.value.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g,"$1$2")).text));
     const t=removeHoNotPlate(raw.replace(/[0-9]{1,4}\s*동/g," ")).replace(/\s+/g,"");
     if(!typeManual){
       const pp=lastPlatePos(t), sp=lastSrcPos(t);
-      if(pp<0&&sp<0) setType("","",false);
-      else if(pp>sp) setType("vehicle","마지막에 차량번호를 말함",false);
+      // v12.2: 말 속에 차량번호가 있으면 순서와 상관없이 정문 방문차량
+      if(pp>=0) setType("vehicle","말 속에 차량번호가 있음",false);
+      else if(sp<0) setType("","",false);
       else setType("intercom","마지막에 발신처("+(selectedSrc||"인터폰")+")를 말함",false);
     }
     if(recType==="vehicle") fillVehicleFields(false);
@@ -859,7 +870,7 @@ function parseVehicleText(text){
 
   function resetForm(){
     contentArea.value="";baseText="";sessionSkip=lastFin;hoInput.value="";hoInput.classList.remove('autofill');hoManual=false;autoPurpose="";
-    carInput.value="";carInput.classList.remove('warn','autofill');purposeInput.value="";carManual=false;purposeManual=false;
+    carInput.value="";carInput.classList.remove('warn','autofill');purposeInput.value="";carManual=false;purposeManual=false;phoneInput.value="";phoneManual=false;phoneInput.classList.remove('autofill');
     document.querySelectorAll('#icSrcGroup .ic-src-btn').forEach(x=>x.classList.remove('on'));selectedSrc="";
     typeManual=false;setType("","",false);
   }
@@ -884,7 +895,7 @@ function parseVehicleText(text){
       const hv=hoInput.value;const md=hv.match(/(\d{1,4})\s*동/);const mh=hv.match(/(\d{1,5})\s*호/);
       if(!car&&!md){alert("차량번호 또는 방문동이 필요합니다.");return;}
       if(car.indexOf("?")>=0&&!confirm("차량번호에 '?'(인식 못한 글자)가 있습니다: "+car+"\n고치지 않고 이대로 저장할까요?"))return;
-      let phone="";try{phone=(parseVehicleText(content).phone)||"";}catch(e){}
+      let phone=phoneInput.value.trim();if(!phone&&!phoneManual){try{phone=(parseVehicleText(content).phone)||"";}catch(e){}}
       const rec={car,dong:md?md[1]+"동":"",ho:mh?mh[1]+"호":"",purpose:purposeInput.value.trim(),phone,
         time:(typeof nowText==="function"?nowText():now.toLocaleString()),voice:content,plateImage:null,via:"인터폰화면"};
       const rs=loadV();rs.push(rec);
@@ -957,7 +968,7 @@ function parseVehicleText(text){
   function vDateTime(t){const m=String(t||"").match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);return m?[m[1],m[2]]:[String(t||""),""];}
   function merged(){
     const a=loadRecords().map((r,i)=>({k:"intercom",i,date:r.date,time:r.time,who:r.src,ho:r.ho,car:"",purpose:r.purpose,content:r.content,edited:r.edited}));
-    const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,content:r.voice,edited:r.edited};});
+    const b=loadV().map((r,i)=>{const dt=vDateTime(r.time);return {k:"vehicle",i,date:dt[0],time:dt[1],who:"방문차량",ho:[r.dong,r.ho].filter(Boolean).join(" "),car:r.car,purpose:r.purpose,phone:r.phone,content:r.voice,edited:r.edited};});
     return a.concat(b).sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
   }
   function renderTable(){
@@ -972,7 +983,7 @@ function parseVehicleText(text){
         +'<div class="ic-rc-top">'+(v?'<span class="ic-tag v">🚗 방문차량</span>':'<span class="ic-tag i">📞 '+escapeHtml(r.who)+'</span>')
         +'<span class="ic-rc-time">'+escapeHtml(r.date.slice(5))+' '+escapeHtml(r.time)+'</span>'
         +'<span class="ic-rc-btns"><button class="ic-edit" data-k="'+r.k+'" data-i="'+r.i+'">수정</button><button class="ic-del" data-k="'+r.k+'" data-i="'+r.i+'">삭제</button></span></div>'
-        +'<div class="ic-rc-main">'+(v&&r.car?'<b class="ic-rc-car">'+escapeHtml(r.car)+'</b>':'')+'<span class="ic-rc-ho">'+escapeHtml(r.ho||'동/호 없음')+'</span>'+(r.purpose?'<span class="ic-rc-pur">'+escapeHtml(r.purpose)+'</span>':'')+'</div>'
+        +'<div class="ic-rc-main">'+(v&&r.car?'<b class="ic-rc-car">'+escapeHtml(r.car)+'</b>':'')+'<span class="ic-rc-ho">'+escapeHtml(r.ho||'동/호 없음')+'</span>'+(r.purpose?'<span class="ic-rc-pur">'+escapeHtml(r.purpose)+'</span>':'')+(r.phone?'<span class="ic-rc-pur">📱 '+escapeHtml(r.phone)+'</span>':'')+'</div>'
         +(r.edited?'<div><span class="ic-edited">✎ 수정됨 '+escapeHtml(r.edited)+'</span></div>':'')
         +'<div class="ic-rc-txt">'+escapeHtml(r.content)+'</div></div>';
     });
