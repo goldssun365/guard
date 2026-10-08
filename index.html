@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v12.3</title>
+<title>경비초소 기록 v12.5</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -188,7 +188,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.3</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.5</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -215,7 +215,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
       </div>
       <div class="ic-dong-warn" id="icDongWarn">⚠️ 우리 단지에 없는 동입니다 — 아래 동/호수 칸을 확인해서 고쳐주세요 (자동 저장 안 됨)</div>
       <div class="ic-auto-bar" id="icAutoBar">
-        <span id="icAutoText">⏱ 5초 후 자동 저장</span>
+        <span id="icAutoText">⏱ 10초 후 자동 저장</span>
         <button type="button" class="ic-auto-cancel" id="icAutoCancel">취소</button>
       </div>
       <div class="ic-car-row" id="icCarRow">
@@ -258,7 +258,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
         <span class="ic-label" style="margin:0;">동 번호 범위</span>
         <input class="ic-ho-input" id="icDongRange" type="text" placeholder="예: 101동~116동" autocomplete="off">
         <div class="ic-dong-summary" id="icDongSummary"></div>
-        <label class="ic-auto-toggle"><input type="checkbox" id="icAutoToggle"> 말이 끝나고 <b>5초</b> 동안 조용하면 <b>자동 저장</b></label>
+        <label class="ic-auto-toggle"><input type="checkbox" id="icAutoToggle"> 말이 끝나고 <b>10초</b> 동안 조용하면 <b>자동 저장</b></label>
         <div class="ic-mode-row" id="icModeRow">
           <span class="ic-label" style="margin:0;">받아쓰기 방식</span>
           <label><input type="radio" name="icMode" value="web"> <span>자동 받아쓰기<small>휴대폰이 기기 안 처리를 지원하면 기기 안에서, 아니면 인터넷(구글 서버)으로 글자를 만듭니다.</small></span></label>
@@ -271,7 +271,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
     </div>
     <div class="ic-notice">
       📱 <b>휴대폰 사용법</b> : 크롬(안드로이드) 또는 사파리(아이폰)로 열고, 처음 한 번 <b>마이크 허용</b>을 눌러주세요. <b>음성 파일은 저장하지 않습니다.</b> 말소리는 글자로만 바뀌어 이 휴대폰에 남습니다. 자동 받아쓰기는 휴대폰에 따라 인터넷(구글 서버)을 거칠 수 있으니, 서버 전송이 싫으면 설정에서 <b>키보드 받아쓰기</b>를 고르세요. 받아쓰는 동안 화면은 켜진 채로 유지되고, 저장하면 받아쓰기가 꺼집니다.<br>
-      🔀 <b>말하는 순서</b> : ① <b>"어디 가세요?"</b> → ② <b>103동 703호</b> → ③ <b>방문목적</b>(택배 등) → ④ <b>휴대폰번호</b>(010 1234 5678) → ⑤ <b>맨 마지막에 차량번호</b>(경기20거 3456) → 5초 뒤 자동 저장. 말 속에 <b>차량번호가 있으면 무조건 🚗방문차량</b>입니다. 차량번호 없이 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b>를 말하면 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
+      🔀 <b>말하는 순서</b> : ① <b>"어디 가세요?"</b> → ② <b>103동 703호</b> → ③ <b>방문목적</b>(택배 등) → ④ <b>휴대폰번호</b>(010 1234 5678) → ⑤ <b>맨 마지막에 차량번호</b>(경기20거 3456) → 10초 뒤 자동 저장. 말 속에 <b>차량번호가 있으면 무조건 🚗방문차량</b>입니다. 차량번호 없이 끝에 <b>공동현관문·방재실·입주세대·후문경비실·관리사무소</b>를 말하면 📞인터폰민원. 틀리면 [저장 구분] 버튼을 누르세요.<br>
       🏠 동/호수는 "113동 703호"처럼 말하면 자동 입력됩니다. 기록은 <b>이 휴대폰 브라우저 안에만</b> 저장되니, 근무 끝나면 <b>[엑셀 저장]</b>으로 꼭 내보내세요.
     </div>
   </div>
@@ -414,6 +414,7 @@ function normalizeSpokenPlate(text){
 // ──────────────────────────────────────────
 const PHONE_SEP="[\\s\\-,.]*";
 const PHONE_RE=new RegExp("(?:공|영|0)"+PHONE_SEP+"(?:일|하나|1)"+PHONE_SEP+"(?:공|영|0|일|하나|1|육|여섯|6|칠|일곱|7|팔|여덟|8|구|아홉|9)(?:"+PHONE_SEP+DW_SRC+"){7,8}","g");
+const PHONE_KW_RE=new RegExp("(휴대폰|핸드폰|휴대전화|전화|연락처)([^0-9]{0,16}?)((?:"+DW_SRC+"\\s*){2,3}"+DW_SRC+")\\s*(?:에|의|다시|[-,.])?\\s*((?:"+DW_SRC+"\\s*){3}"+DW_SRC+")(?![0-9])","g");
 function maskPhone(text){
   let phone="";
   const out=String(text||"").replace(PHONE_RE,function(m){
@@ -422,7 +423,21 @@ function maskPhone(text){
     if(!phone) phone=d.length===11? d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7) : d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6);
     return " ☎ ";
   });
-  return {text:out, phone:phone};
+  // v12.4: 010을 빼고 말한 경우 — "휴대폰 번호 3476에 2389", "전화번호 알려주세요 3567 1289"
+  //        (휴대폰·핸드폰·전화·연락처 다음에 오는 3~4자리 + 4자리 → 앞에 010을 붙임)
+  const fmt=(a,b)=>"010-"+a+"-"+b;
+  let out2=out.replace(PHONE_KW_RE,function(m,kw,fill,a,b){
+    const d1=spokenToDigits(a), d2=spokenToDigits(b);
+    if(!(d1.length===3||d1.length===4)||d2.length!==4) return m;
+    if(!phone) phone=fmt(d1,d2);
+    return kw+fill+" ☎ ";
+  });
+  // 단어 없이 "3476에 2389"처럼 '에'로 이어 말한 경우 (숫자로 적힌 것만)
+  out2=out2.replace(/(^|[^0-9])([0-9]{3,4})\s*(?:에|의)\s*([0-9]{4})(?![0-9])/g,function(m,pre,a,b){
+    if(!phone) phone=fmt(a,b);
+    return pre+" ☎ ";
+  });
+  return {text:out2, phone:phone};
 }
 
 function splitDongHo(text){
@@ -435,7 +450,15 @@ function splitDongHo(text){
   conv = conv.replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2");
   // ② 한글 숫자 층: "십삼층" → "13층"
   conv = conv.replace(/([일이삼사오육칠팔구십]+)\s*층/g, function(m,k){ const n=parseKorNum(k); return n>0? n+"층" : m; });
+  // v12.4: "이천삼백 오호"처럼 천·백 단위 뒤에 끝자리가 띄어 적힌 경우 → 2305호
+  conv = conv.replace(/(^|[^가-힣])([공영일이삼사오육칠팔구십백천]*[백천][공영일이삼사오육칠팔구십백천]*)\s+([일이삼사오육칠팔구]|[공영일이삼사오육칠팔구십]{2,3})\s*호/g,
+    function(m,pre,a,b){ const n=parseKorNum(a+b); return n>0? pre+n+"호" : m; });
   conv = koreanNumToArabic(conv);
+  // v12.4: 숫자로 갈라진 네 자리 호수
+  conv = conv.replace(/(^|[^0-9])([1-9])\s*천\s*([0-9]{3})\s*호/g, function(m,p,k,d){ return p+(k*1000+ +d)+"호"; });   // 2천 305호 → 2305호
+  conv = conv.replace(/(^|[^0-9])([1-9])000\s+([0-9]{3})\s*호/g, function(m,p,k,d){ return p+(k*1000+ +d)+"호"; });      // 2000 305호 → 2305호
+  conv = conv.replace(/(^|[^0-9])([1-9][0-9])00\s+([0-9])\s*호/g, function(m,p,f,u){ return p+f+"0"+u+"호"; });           // 2300 5호 → 2305호
+  conv = conv.replace(/([0-9]{1,4}\s*동)\s*([일이삼사오육칠팔구])\s+([0-9]{3})\s*호/g, function(m,dg,k,d){ const map={일:1,이:2,삼:3,사:4,오:5,육:6,칠:7,팔:8,구:9}; return dg+" "+(map[k]*1000+ +d)+"호"; }); // 116동 이 305호 → 2305호
   // ③ 층+호로 말한 경우: "13층 3호" → "1303호", "23층 5호" → "2305호"
   conv = conv.replace(/([0-9]{1,2})\s*층\s*([0-9]{1,2})\s*호/g, function(m,f,u){ return (+f*100 + +u)+"호"; });
   // "백 8동" / "100 12동"처럼 '백'이 따로 적힌 경우 → 108동, 112동
@@ -916,11 +939,11 @@ function parseVehicleText(text){
   // 조건: ① 구분(방문차량/인터폰)이 정해졌고 ② 방문차량이면 차량번호가 '?' 없이 채워졌고
   //       인터폰이면 발신처가 정해졌을 때 ③ 5초 동안 새 말소리나 입력이 없으면 저장.
   // 말하는 중(중간 결과 포함)이거나 칸을 고치면 카운트가 처음부터 다시 시작됩니다.
-  const AUTO_KEY="guardAutoSave_v1", AUTO_SEC=5;
+  const AUTO_KEY="guardAutoSave_v1", AUTO_SEC=10;
   const autoBar=$("icAutoBar"), autoText=$("icAutoText"), autoToggle=$("icAutoToggle");
   let autoOn=true; try{autoOn=localStorage.getItem(AUTO_KEY)!=="off";}catch(e){}
   autoToggle.checked=autoOn;
-  autoToggle.addEventListener('change',()=>{autoOn=autoToggle.checked;try{localStorage.setItem(AUTO_KEY,autoOn?"on":"off");}catch(e){}if(!autoOn)autoStop();setStatus(autoOn?"자동 저장 켜짐 ✓ (5초)":"자동 저장 꺼짐 — [저장] 버튼으로 저장하세요","done");});
+  autoToggle.addEventListener('change',()=>{autoOn=autoToggle.checked;try{localStorage.setItem(AUTO_KEY,autoOn?"on":"off");}catch(e){}if(!autoOn)autoStop();setStatus(autoOn?"자동 저장 켜짐 ✓ (10초)":"자동 저장 꺼짐 — [저장] 버튼으로 저장하세요","done");});
   let autoTimer=null, autoLeft=0, autoCancelledFor=null;
   function autoReady(){
     if(!autoOn||!recType)return false;
