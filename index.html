@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>경비초소 기록 v12.5</title>
+<title>경비초소 기록 v12.6</title>
 <meta name="description" content="인터폰·방문차량 음성 기록 — 말하면 받아쓰고, 엑셀로 자동 분리">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -188,7 +188,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.5</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🛡️ 경비초소 기록 <span class="ic-ver">v12.6</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -349,7 +349,7 @@ function parseKorNum(s) {
 // "숫자+호+숫자4자리"는 번호판으로 보고 호수 후보에서 뺍니다.
 // 호수는 "동 바로 뒤의 호"를 가장 먼저 인정합니다.
 // ──────────────────────────────────────────
-const HO_NOT_PLATE = /([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9]))/;
+const HO_NOT_PLATE = /([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9])(?!호))/;
 // ──────────────────────────────────────────
 // 우리 단지 동 번호 목록 (v11.3)
 // 받아쓰기가 "백팔동"의 '백'을 빼먹고 "8동"으로 적는 경우,
@@ -468,7 +468,7 @@ function splitDongHo(text){
   // 숫자가 띄어서 적힌 경우: "11 2동"→112동, "13 05호"→1305호, "1 305호"→1305호
   conv = conv.replace(/(^|[^0-9])([0-9]{1,2})\s+([0-9]{1,2})\s*동/g, function(m,p,a,b){ const j=a+b; return j.length===3? p+j+"동" : m; });
   conv = conv.replace(/(^|[^0-9])([0-9]{1,2})\s+([0-9]{2,3})\s*호/g, function(m,p,a,b){ const j=a+b; return (j.length===3||j.length===4)? p+j+"호" : m; });
-  const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])","g");
+  const PL = new RegExp("[0-9]{2,3}\\s*[가나다라마거너더러머고노도로모구누두루무바사아자배서어저보소오조부수우주하허호]\\s*[0-9]{4}(?![0-9])(?!\\s*호)","g");
   conv = conv.replace(PL, function(m, off, all){
     return /[0-9]동\s*$/.test(all.slice(Math.max(0,off-8),off)) ? m : "|";
   });
@@ -483,16 +483,20 @@ function splitDongHo(text){
   if(pick){
     out.dong = pick.n+"동";
     const after = clean.slice(pick.end).match(/^([0-9]{1,4})(?:호수?|호실?)/);
-    if(after){ out.ho = after[1]+"호"; return out; }
+    if(after){ out.ho = after[1]+"호";
+      // v12.6: "703호 아니 803호"처럼 고쳐 말하면 고친 호수를 씀
+      const fixes=[...clean.slice(pick.end).matchAll(/(?:아니|아니요|아니고|정정)[^0-9]{0,4}([0-9]{1,4})(?:호수|호실|호)(?![0-9]{4}(?![0-9])(?!호))/g)];
+      if(fixes.length) out.ho = fixes[fixes.length-1][1]+"호";
+      return out; }
   }
   const mdh = clean.match(/[0-9]{1,4}동([0-9]{1,4})(?:호수?|호실?)/);   // 105동302호
   if(mdh){ out.ho = mdh[1]+"호"; return out; }
   const rest = clean.replace(/[0-9]{1,4}동/g,"");
   const re = new RegExp(HO_NOT_PLATE.source,"g"); let m;
-  while((m=re.exec(rest))){ if(m[1].length>=2 || !out.dong){ out.ho=m[1]+"호"; break; } }
+  while((m=re.exec(rest))){ if(m[1].length>=2 || !out.dong){ out.ho=m[1]+"호"; } }   // v12.6: 여러 번 말하면 마지막 호수
   return out;
 }
-function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"(?:호수|호실|호)(?!\\s*[0-9]{4}(?![0-9]))","g"),""); }
+function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"(?:호수|호실|호)(?!\\s*[0-9]{4}(?![0-9])(?!\\s*호))","g"),""); }
 
 function parseVehicleText(text){
   const R = {};
@@ -1027,7 +1031,7 @@ function parseVehicleText(text){
     const esc=x=>escapeHtml(x||"");
     let hoTxt=v?"":(r.ho||"");
     const fields=v
-      ?[["car","차량번호",r.car,"car"],["dong","방문 동",r.dong],["ho","방문 호수",r.ho],["purpose","방문목적",r.purpose],["phone","전화번호",r.phone]]
+      ?[["dong","방문 동",r.dong],["ho","방문 호수",r.ho],["phone","전화번호",r.phone],["purpose","방문목적",r.purpose],["car","차량번호",r.car,"car"]]
       :[["src","발신처",r.src],["ho","동/호수",hoTxt],["purpose","방문목적",r.purpose]];
     const form=document.createElement('div');
     form.innerHTML='<div class="ic-ed-form">'+fields.map(f=>'<label>'+f[1]+'</label><input data-f="'+f[0]+'" class="'+(f[3]||'')+'" value="'+esc(f[2])+'"'+(f[0]==="phone"?' inputmode="tel"':'')+'>').join('')+'</div>'
