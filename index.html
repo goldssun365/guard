@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a3a6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>방문차량 기록 v13.0</title>
+<title>방문차량 기록 v13.1</title>
 <meta name="description" content="정문 방문차량 음성 기록 — 동·호수, 전화번호, 방문목적, 차량번호를 말하면 자동 기록">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="경비초소 기록">
@@ -93,7 +93,10 @@ body {
 .ic-ed-form input.car{font-size:20px;font-weight:900;letter-spacing:.5px;}
 .ic-ed-act{display:flex;gap:8px;margin-top:8px;}
 .ic-ed-act button{flex:1;border:none;border-radius:8px;padding:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
-.ic-ed-ok{background:var(--green);color:#fff;} .ic-ed-no{background:#e8eaef;color:var(--text);}
+.ic-ed-ok{background:var(--green);color:#fff;}
+.ic-ed-form input.autofill{border-color:var(--green);background:#eefaf0;}
+.ic-ed-note{font-size:13px;color:var(--muted);margin:2px 0 4px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.ic-ed-refill{border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;} .ic-ed-no{background:#e8eaef;color:var(--text);}
 .ic-empty{color:var(--muted);text-align:center;padding:24px;font-size:15px;}
 .ic-count{font-size:14px;color:var(--muted);font-weight:700;}
 .ic-foot{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
@@ -190,7 +193,7 @@ body.ic-rec #icStartBtn{background:#e53935;animation:icblink 1.4s infinite;}
 <body>
 <div id="panelIntercom">
   <div class="ic-header">
-    <h1>🚗 방문차량 기록 <span class="ic-ver">v13.0</span> <span class="ic-net" id="icNet"></span></h1>
+    <h1>🚗 방문차량 기록 <span class="ic-ver">v13.1</span> <span class="ic-net" id="icNet"></span></h1>
     <div class="ic-clock" id="icClock">--:--:--</div>
   </div>
   <div class="ic-wrap">
@@ -280,8 +283,9 @@ function koreanNumToArabic(str) {
   // 1단계: 한글 숫자가 포함된 "XXX동" "XXX호" 패턴을 찾아서 변환
   // 동/호 앞의 한글 숫자 덩어리를 숫자로 바꿔줌
   str = str.replace(
-    /((?:[공영일이삼사오육칠팔구십백천만]+))([동호])/g,
-    function(match, numPart, suffix){
+    /((?:[공영일이삼사오육칠팔구십백천만]+))(\s*)([동호])/g,
+    function(match, numPart, sp, suffix){
+      if(sp && numPart.length<2) return match;   // "이 호"처럼 한 글자+띄어쓰기는 숫자로 보지 않음
       const converted = parseKorNum(numPart);
       if(converted > 0) return converted + suffix;
       return match;
@@ -486,6 +490,14 @@ function splitDongHo(text){
 }
 function removeHoNotPlate(str){ return str.replace(new RegExp("[0-9]{1,4}\\s*"+"(?:호수|호실|호)(?!\\s*[0-9]{4}(?![0-9])(?!\\s*호))","g"),""); }
 
+// v13.1: 원문 전체에서 다섯 칸을 한 번에 뽑음 (저장할 때 빈칸 채우기, 수정 화면 채우기에 사용)
+function extractAllFields(voice){
+  const out={dong:"",ho:"",phone:"",purpose:"",car:""};
+  try{ const dh=splitDongHo(voice||""); out.dong=dh.dong||""; out.ho=dh.ho||""; }catch(e){}
+  try{ const R=parseVehicleText(voice||""); out.phone=R.phone||""; out.purpose=R.purpose||""; out.car=R.carNumber||""; }catch(e){}
+  return out;
+}
+
 function parseVehicleText(text){
   const R = {};
   const mp = maskPhone(String(text||"").replace(/([0-9]),\s?([0-9]{3})(?![0-9])/g, "$1$2"));
@@ -509,7 +521,8 @@ function parseVehicleText(text){
     "부모님집방문","어린이집방문","삼성에이에스","인테리어견적","인터리어견적","인테리어실측","이유식배달","도시락배달","해산물배달","부모님방문","친구집방문","지인집방문","친척집방문","인터넷설치","보일러점검","정수기점검","유치원방문","관리실방문","노인정방문","반찬배달","새벽배달","택배배달","김치배달","음식배달","가구배송","친구방문","지인방문","친척방문","가족방문","세대방문","가스점검","가구설치","방문수업","가정교사","상가방문","이사견적","이사청소","학원차량","학원버스","퀵서비스","운전기사","대리기사","인테리어","세탁배송","에이에스","어린이집","오아시스","부모님집","공사차량","생수배달","우유배달","지역난방","난방점검","꽃배달","약배달","학습지","세탁소","이유식","유치원","관리실","노인정","경로당","이마트","해산물","세탁물","정수기","친구집","친척집","언니집","동생집","부동산","누나집","오빠집","자녀집","아들집","가전","조경","택배","배송","배달","수리","공사","설치","점검","청소","방역","소독","학원","택시","과외","기사","상가","세탁","가구","쿠팡","한진","롯데","삼성","수업","대신","당근","픽업","지인","친구","친척","경비","괴외","우유","실측","견적","형집","딸집","생수"
   ];
   // 받아쓰기 오타·다른 표현을 바른 이름으로
-  const PURPOSE_FIX = {"괴외":"과외","인터리어견적":"인테리어견적","에이에스":"AS","삼성에이에스":"삼성AS"};
+  purposeKeywords.unshift("부모님댁","어머님댁","아버님댁","친척댁","지인댁","할머니댁","할아버지댁","시댁","처가");
+  const PURPOSE_FIX = {"부모님댁":"부모님집","어머님댁":"부모님집","아버님댁":"부모님집","친척댁":"친척집","지인댁":"지인방문","할머니댁":"친척집","할아버지댁":"친척집","괴외":"과외","인터리어견적":"인테리어견적","에이에스":"AS","삼성에이에스":"삼성AS"};
   for(let i=0; i<purposeKeywords.length; i++){
     if(rawClean.includes(purposeKeywords[i])){
       purpose = PURPOSE_FIX[purposeKeywords[i]] || purposeKeywords[i]; break;
@@ -909,10 +922,11 @@ function parseVehicleText(text){
     if(recType==="vehicle"){
       const car=carInput.value.trim();
       const hv=hoInput.value;const md=hv.match(/(\d{1,4})\s*동/);const mh=hv.match(/(\d{1,5})\s*호/);
-      if(!car&&!md){alert("차량번호 또는 방문동이 필요합니다.");return;}
+      if(!car&&!md&&!extractAllFields(content).car&&!extractAllFields(content).dong){alert("차량번호 또는 방문동이 필요합니다.");return;}
       if(car.indexOf("?")>=0&&!confirm("차량번호에 '?'(인식 못한 글자)가 있습니다: "+car+"\n고치지 않고 이대로 저장할까요?"))return;
       let phone=phoneInput.value.trim();if(!phone&&!phoneManual){try{phone=(parseVehicleText(content).phone)||"";}catch(e){}}
-      const rec={car,dong:md?md[1]+"동":"",ho:mh?mh[1]+"호":"",purpose:purposeInput.value.trim(),phone,
+      const A=extractAllFields(content);
+      const rec={car:car||A.car,dong:md?md[1]+"동":A.dong,ho:mh?mh[1]+"호":A.ho,purpose:purposeInput.value.trim()||A.purpose,phone:phone||A.phone,
         time:(typeof nowText==="function"?nowText():now.toLocaleString()),voice:content,plateImage:null,via:"음성기록"};
       const rs=loadV();rs.push(rec);
       try{saveV(rs);}catch(e){alert("저장 공간이 가득 찼습니다. [엑셀 저장] 후 [전체 삭제]로 정리해주세요.");return;}
@@ -1020,14 +1034,18 @@ function parseVehicleText(text){
     const esc=x=>escapeHtml(x||"");
     let hoTxt=v?"":(r.ho||"");
     const fields=v
-      ?[["dong","방문 동",r.dong],["ho","방문 호수",r.ho],["phone","전화번호",r.phone],["purpose","방문목적",r.purpose],["car","차량번호",r.car,"car"]]
+      ?(()=>{const A=extractAllFields(r.voice);const g=k=>r[k]||A[k]||"";const mark=k=>(!r[k]&&A[k])?" autofill":"";
+          return [["dong","방문 동",g("dong"),mark("dong")],["ho","방문 호수",g("ho"),mark("ho")],["phone","전화번호",g("phone"),mark("phone")],["purpose","방문목적",g("purpose"),mark("purpose")],["car","차량번호",g("car"),"car"+mark("car")]];})()
       :[["src","발신처",r.src],["ho","동/호수",hoTxt],["purpose","방문목적",r.purpose]];
     const form=document.createElement('div');
     form.innerHTML='<div class="ic-ed-form">'+fields.map(f=>'<label>'+f[1]+'</label><input data-f="'+f[0]+'" class="'+(f[3]||'')+'" value="'+esc(f[2])+'"'+(f[0]==="phone"?' inputmode="tel"':'')+'>').join('')+'</div>'
+      +(v?'<div class="ic-ed-note">초록 칸 = 원문에서 자동으로 찾아 채운 값 · <button type="button" class="ic-ed-refill">🔄 원문에서 다시 채우기</button></div>':'')
       +'<div class="ic-ed-act"><button class="ic-ed-no">취소</button><button class="ic-ed-ok">수정 저장</button></div>';
     card.querySelector('.ic-rc-main').replaceWith(form);
     const first=form.querySelector('input'); first.focus(); try{first.setSelectionRange(0,first.value.length);}catch(e){}
     form.querySelector('.ic-ed-no').addEventListener('click',()=>renderTable());
+    const refill=form.querySelector('.ic-ed-refill');
+    if(refill) refill.addEventListener('click',()=>{const A=extractAllFields(r.voice);form.querySelectorAll('input').forEach(i=>{const k=i.dataset.f;if(A[k]){i.value=A[k];i.classList.add('autofill');}});});
     form.querySelector('.ic-ed-ok').addEventListener('click',()=>{
       const val={}; form.querySelectorAll('input').forEach(i=>val[i.dataset.f]=i.value.trim());
       if(v){
